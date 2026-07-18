@@ -321,6 +321,9 @@ public class VerityEntity extends PathfinderMob {
             if (hurtFaceResetTicks == 0) {
                 clearHurtFaceToHappy();
             }
+        } else if ("hurt".equalsIgnoreCase(getFaceVariant())) {
+            // Recover stuck hurt face (e.g. saved NBT without timer).
+            clearHurtFaceToHappy();
         }
 
         if (interactionCooldown > 0) {
@@ -403,7 +406,10 @@ public class VerityEntity extends PathfinderMob {
 
     private void clearHurtFaceToHappy() {
         hurtFaceResetTicks = 0;
-        setFaceVariant("auto");
+        pendingDefaultSmile = false;
+        setTalking(false);
+        // Force happy texture (not only "auto") so clients never keep a stuck hurt PNG.
+        setFaceVariant("happy");
         setExpression(VerityExpressionState.HAPPY);
         if (!isTalking() && voiceCueQueue.isEmpty()
                 && !(greetingStarted && !greetingCompleted)) {
@@ -797,6 +803,7 @@ public class VerityEntity extends PathfinderMob {
         tag.putString("CurrentAnimation", this.entityData.get(DATA_ANIMATION));
         tag.putString("CurrentExpression", this.entityData.get(DATA_EXPRESSION));
         tag.putString("FaceVariant", this.entityData.get(DATA_FACE_VARIANT));
+        tag.putInt("HurtFaceResetTicks", hurtFaceResetTicks);
         tag.putBoolean("WasThrown", isWasThrown());
         tag.putBoolean("FollowingOwner", followingOwner);
         tag.putBoolean("InvulnerableStoryEntity", true);
@@ -825,6 +832,15 @@ public class VerityEntity extends PathfinderMob {
         }
         if (tag.contains("FaceVariant")) {
             this.entityData.set(DATA_FACE_VARIANT, tag.getString("FaceVariant"));
+        }
+        if (tag.contains("HurtFaceResetTicks")) {
+            hurtFaceResetTicks = Math.max(0, tag.getInt("HurtFaceResetTicks"));
+        } else if ("hurt".equalsIgnoreCase(this.entityData.get(DATA_FACE_VARIANT))) {
+            // Older saves could store hurt with no timer — expire after ~10s from load.
+            hurtFaceResetTicks = HURT_FACE_DURATION_TICKS;
+        }
+        if (hurtFaceResetTicks <= 0 && "hurt".equalsIgnoreCase(this.entityData.get(DATA_FACE_VARIANT))) {
+            clearHurtFaceToHappy();
         }
         if (tag.contains("WasThrown")) {
             setWasThrown(tag.getBoolean("WasThrown"));
