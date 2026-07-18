@@ -61,8 +61,16 @@ public class VerityEntity extends PathfinderMob {
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_FACE_VARIANT =
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.STRING);
+    /**
+     * Must be synched — Forge {@code persistentData} is server-only. 1.0.13 kept WasThrown in
+     * persistentData, so clients still ran the stationary velocity lock every tick.
+     */
+    private static final EntityDataAccessor<Boolean> DATA_WAS_THROWN =
+            SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final int GREETING_DURATION_TICKS = 128;
+    /** Minimum ticks after throw before WasThrown may clear (prevents instant settle lock). */
+    private static final int THROW_SETTLE_MIN_TICKS = 12;
 
     @Nullable
     private UUID ownerUuid;
@@ -83,6 +91,8 @@ public class VerityEntity extends PathfinderMob {
     private double pendingFallBounceY = -1.0;
     /** Brief hurt face after wall/fall bounce, then restore happy idle. */
     private int hurtFaceResetTicks;
+    /** Server tick when setWasThrown(true) was last applied. */
+    private int thrownAtTick = -1000;
 
     // Client-only cosmetic state
     private int clientBlinkCooldown;
@@ -97,7 +107,9 @@ public class VerityEntity extends PathfinderMob {
 
     public VerityEntity(EntityType<? extends VerityEntity> type, Level level) {
         super(type, level);
-        this.setNoAi(true);
+        // Match JAR: noCulling + persistence. Do NOT setNoAi — Mob.isEffectiveAi() gates
+        // movement dampening oddly and JAR Verity has AI enabled with goals.
+        this.noCulling = true;
         this.setPersistenceRequired();
         this.setInvulnerable(true);
         this.xpReward = 0;
@@ -107,11 +119,11 @@ public class VerityEntity extends PathfinderMob {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
+        // Match verity-5.7.2: health 20, movement 0.25, follow 32 (not 0.0 speed).
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
-                .add(Attributes.FOLLOW_RANGE, 16.0D);
+                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                .add(Attributes.FOLLOW_RANGE, 32.0D);
     }
 
     @Override
@@ -130,6 +142,19 @@ public class VerityEntity extends PathfinderMob {
         this.entityData.define(DATA_BOUNCE_START, -1000);
         this.entityData.define(DATA_TALKING, false);
         this.entityData.define(DATA_FACE_VARIANT, "auto");
+        this.entityData.define(DATA_WAS_THROWN, false);
+    }
+
+    public void setWasThrown(boolean thrown) {
+        this.entityData.set(DATA_WAS_THROWN, thrown);
+        this.getPersistentData().putBoolean("WasThrown", thrown);
+        if (thrown) {
+            this.thrownAtTick = this.tickCount;
+        }
+    }
+
+    public boolean isWasThrown() {
+        return this.entityData.get(DATA_WAS_THROWN);
     }
 
     public void beginPostReveal(ServerPlayer owner) {
@@ -168,25 +193,30 @@ public class VerityEntity extends PathfinderMob {
         Vec3 motionBeforeCollision = this.getDeltaMovement();
         super.tick();
 
-        boolean wasThrown = this.getPersistentData().getBoolean("WasThrown");
-        // After bounce settles, clear WasThrown so stationary/look-at resume (JAR keeps the flag
-        // only to disable LookAtPlayerGoal; we restore story-entity stationarity on land).
-        if (wasThrown && this.onGround() && pendingFallBounceTicks <= 0) {
-            Vec3 m = this.getDeltaMovement();
-            if (m.horizontalDistanceSqr() < 1.0E-3 && Math.abs(m.y) < 0.08) {
-                this.getPersistentData().putBoolean("WasThrown", false);
-                wasThrown = false;
-            }
-        }
-        // Stationary lock must not run while thrown — it zeroed velocity every tick (throw glitch).
-        if (!wasThrown && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
-            this.setDeltaMovement(Vec3.ZERO);
-            this.getNavigation().stop();
-        }
+        boolean wasThrown = isWasThrown();
 
+        // CLIENT: never velocity-lock. WasThrown used to live only in server persistentData,
+        // so clients always thought !wasThrown and zeroed throw momentum every tick (1.0.13).
         if (this.level().isClientSide) {
             tickClientVisuals();
             return;
+        }
+
+        // After bounce settles (with grace), clear WasThrown so look-at / optional stationary resume.
+        if (wasThrown
+                && this.onGround()
+                && pendingFallBounceTicks <= 0
+                && (this.tickCount - thrownAtTick) >= THROW_SETTLE_MIN_TICKS) {
+            Vec3 m = this.getDeltaMovement();
+            if (m.horizontalDistanceSqr() < 1.0E-3 && Math.abs(m.y) < 0.08) {
+                setWasThrown(false);
+                wasThrown = false;
+            }
+        }
+        // Optional stationary lock: server-only, never while thrown.
+        if (!wasThrown && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
+            this.setDeltaMovement(Vec3.ZERO);
+            this.getNavigation().stop();
         }
 
         // Wall bounce — verity-5.7.2 VerityEntity.tick (horizontalCollision + 0.6 restitution).
@@ -623,15 +653,8 @@ public class VerityEntity extends PathfinderMob {
 
     @Override
     public boolean isPushable() {
-        return false;
-    }
-
-    @Override
-    protected void doPush(Entity entity) {
-    }
-
-    @Override
-    public void push(Entity entity) {
+        // JAR VerityEntity.isPushable() → true (needed so throw spawn isn't glued in the player).
+        return true;
     }
 
     @Override
@@ -669,6 +692,7 @@ public class VerityEntity extends PathfinderMob {
         tag.putString("CurrentAnimation", this.entityData.get(DATA_ANIMATION));
         tag.putString("CurrentExpression", this.entityData.get(DATA_EXPRESSION));
         tag.putString("FaceVariant", this.entityData.get(DATA_FACE_VARIANT));
+        tag.putBoolean("WasThrown", isWasThrown());
         tag.putBoolean("InvulnerableStoryEntity", true);
         tag.putBoolean("StationaryIntroductionState", true);
     }
@@ -693,6 +717,11 @@ public class VerityEntity extends PathfinderMob {
         }
         if (tag.contains("FaceVariant")) {
             this.entityData.set(DATA_FACE_VARIANT, tag.getString("FaceVariant"));
+        }
+        if (tag.contains("WasThrown")) {
+            setWasThrown(tag.getBoolean("WasThrown"));
+        } else if (this.getPersistentData().getBoolean("WasThrown")) {
+            setWasThrown(true);
         }
         if (greetingStarted && !greetingCompleted) {
             greetingCompleted = true;

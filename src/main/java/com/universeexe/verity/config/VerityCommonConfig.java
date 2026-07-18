@@ -81,7 +81,9 @@ public final class VerityCommonConfig {
         GREETING_VOLUME = builder.defineInRange("greetingVolume", 1.0, 0.0, 2.0);
         GREETING_HEARING_DISTANCE = builder.defineInRange("greetingHearingDistance", 24.0, 8.0, 64.0);
         PROTECT_VERITY = builder.define("protectVerity", true);
-        KEEP_VERITY_STATIONARY_AFTER_REVEAL = builder.define("keepVerityStationaryAfterReveal", true);
+        // Default OFF: throw/pickup needs free physics. When ON, lock applies only after settle
+        // and never while WasThrown (and never on the client — see VerityEntity.tick).
+        KEEP_VERITY_STATIONARY_AFTER_REVEAL = builder.define("keepVerityStationaryAfterReveal", false);
         LOOK_AT_OWNER_AFTER_REVEAL = builder.define("lookAtOwnerAfterReveal", true);
         ALLOW_REVEAL_RETRY_AFTER_FAILURE = builder.define("allowRevealRetryAfterFailure", true);
         DEBUG_REVEAL_LOGGING = builder.define("debugRevealLogging", false);

@@ -47,7 +47,6 @@ public final class VerityItemInteractions {
             return;
         }
         // Prefer block-place when aiming at a block (avoids throw+place double spawn).
-        // JAR relies on separate RightClickBlock; keep this guard for Forge event overlap.
         HitResult hit = player.pick(player.getBlockReach(), 0.0f, false);
         if (hit.getType() == HitResult.Type.BLOCK) {
             return;
@@ -59,24 +58,35 @@ public final class VerityItemInteractions {
         } else {
             variantToSpawn = VerityVariants.fromStack(stack);
         }
+
+        // Consume before spawn (JAR order). Creative still shrinks the held copy for the use.
         stack.shrink(1);
         Vec3 launchVelocity = player.getLookAngle().normalize().scale(1.5);
 
         VerityEntity newVerity = VerityEntities.VERITY.get().create(player.level());
         if (newVerity != null) {
-            // JAR: setPos(blockPosition().offset(0,1,0).getCenter())
+            // JAR: setPos(blockPosition().offset(0, 1, 0).getCenter())
             newVerity.setPos(Vec3.atCenterOf(player.blockPosition().offset(0, 1, 0)));
+            newVerity.setYRot(player.getYRot());
+            newVerity.setXRot(player.getXRot());
             newVerity.setFaceVariant(VerityVariants.sanitize(variantToSpawn));
             newVerity.setExpression(VerityExpressionState.HAPPY);
             newVerity.setTalking(false);
-            newVerity.getPersistentData().putBoolean("WasThrown", true);
             newVerity.setOwnerUUID(player.getUUID());
+            // Synced flag — persistentData alone is NOT visible on clients (1.0.13 bug).
+            newVerity.setWasThrown(true);
+            // Set velocity BEFORE addFreshEntity so spawn/pairing packet carries momentum.
+            newVerity.setDeltaMovement(launchVelocity);
+            newVerity.hasImpulse = true;
+            newVerity.hurtMarked = true;
+
             player.level().addFreshEntity(newVerity);
-            // JAR plays TTS "AAAAAAAAHHH" — skipped (no TTS stack in this mod).
+            // JAR plays TTS "AAAAAAAAHHH" — skipped (no TTS stack).
             player.level().playSound(null, player.blockPosition(), SoundEvents.ENDER_DRAGON_FLAP,
                     SoundSource.PLAYERS, 1.0f, 1.0f);
+            // Re-assert after spawn (JAR order: add → sound → setDelta → hurtMarked).
             newVerity.setDeltaMovement(launchVelocity);
-            // JAR: f_19864_ = true → hurtMarked (forces client velocity sync). NOT hasImpulse.
+            newVerity.hasImpulse = true;
             newVerity.hurtMarked = true;
 
             if (player instanceof ServerPlayer serverPlayer) {
@@ -125,7 +135,7 @@ public final class VerityItemInteractions {
         spawned.setFaceVariant(variant);
         spawned.setExpression(VerityExpressionState.HAPPY);
         spawned.setTalking(false);
-        spawned.getPersistentData().putBoolean("WasThrown", false);
+        spawned.setWasThrown(false);
         spawned.setOwnerUUID(player.getUUID());
         if (stack.hasTag() && stack.getTag() != null && stack.getTag().contains(VerityItem.TAG_NAME)) {
             spawned.setCustomName(net.minecraft.network.chat.Component.literal(

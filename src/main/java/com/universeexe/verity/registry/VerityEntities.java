@@ -27,7 +27,8 @@ public final class VerityEntities {
             () -> EntityType.Builder.<VerityEntity>of(VerityEntity::new, MobCategory.MISC)
                     .sized(VerityEntity.TARGET_WIDTH, VerityEntity.TARGET_HEIGHT)
                     .clientTrackingRange(10)
-                    .updateInterval(3)
+                    // 1 = sync every tick so throw velocity/position match JAR feel (was 3 → stutter).
+                    .updateInterval(1)
                     .fireImmune()
                     .build("verity"));
 
