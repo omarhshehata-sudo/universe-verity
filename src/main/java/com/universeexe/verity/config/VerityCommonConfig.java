@@ -16,6 +16,9 @@ public final class VerityCommonConfig {
     public static final ForgeConfigSpec.BooleanValue ENABLE_SUBTITLES;
     public static final ForgeConfigSpec.DoubleValue MAXIMUM_HEARING_DISTANCE;
     public static final ForgeConfigSpec.BooleanValue INITIAL_SEQUENCE_ENABLED;
+    public static final ForgeConfigSpec.IntValue BOX_VOICE_PAUSE_TICKS;
+    public static final ForgeConfigSpec.IntValue BOX_PLEASE_DELAY_TICKS;
+    public static final ForgeConfigSpec.IntValue BOX_STILL_THERE_DELAY_TICKS;
     public static final ForgeConfigSpec.BooleanValue IDLE_CALLING_ENABLED;
     public static final ForgeConfigSpec.IntValue IDLE_MINIMUM_DELAY_SECONDS;
     public static final ForgeConfigSpec.IntValue IDLE_MAXIMUM_DELAY_SECONDS;
@@ -32,6 +35,7 @@ public final class VerityCommonConfig {
     public static final ForgeConfigSpec.IntValue VERITY_SPAWN_TICK;
     public static final ForgeConfigSpec.IntValue BOX_REMOVAL_TICK;
     public static final ForgeConfigSpec.IntValue GREETING_DELAY_TICKS;
+    public static final ForgeConfigSpec.IntValue OPEN_FOUND_PAUSE_TICKS;
     public static final ForgeConfigSpec.BooleanValue ENABLE_GREETING;
     public static final ForgeConfigSpec.DoubleValue GREETING_VOLUME;
     public static final ForgeConfigSpec.DoubleValue GREETING_HEARING_DISTANCE;
@@ -57,6 +61,12 @@ public final class VerityCommonConfig {
         ENABLE_SUBTITLES = builder.define("enableSubtitles", true);
         MAXIMUM_HEARING_DISTANCE = builder.defineInRange("maximumHearingDistance", 24.0, 8.0, 64.0);
         INITIAL_SEQUENCE_ENABLED = builder.define("initialSequenceEnabled", true);
+        // Pause after each of the first four sealed lines (clip end → next line).
+        BOX_VOICE_PAUSE_TICKS = builder.defineInRange("boxVoicePauseTicks", 60, 40, 80);
+        // Longer wait after line 4 before muffled "Please".
+        BOX_PLEASE_DELAY_TICKS = builder.defineInRange("boxPleaseDelayTicks", 240, 80, 1200);
+        // Very long wait after "Please" before "You're still there".
+        BOX_STILL_THERE_DELAY_TICKS = builder.defineInRange("boxStillThereDelayTicks", 900, 200, 6000);
         IDLE_CALLING_ENABLED = builder.define("idleCallingEnabled", true);
         // Quiet gap between sealed-box activity bursts (seconds). Forever until reveal.
         IDLE_MINIMUM_DELAY_SECONDS = builder.defineInRange("idleMinimumDelaySeconds", 5, 2, 300);
@@ -76,7 +86,10 @@ public final class VerityCommonConfig {
         BOX_OPENING_DURATION_TICKS = builder.defineInRange("boxOpeningDurationTicks", 40, 1, 200);
         VERITY_SPAWN_TICK = builder.defineInRange("veritySpawnTick", 52, 1, 200);
         BOX_REMOVAL_TICK = builder.defineInRange("boxRemovalTick", 64, 1, 250);
-        GREETING_DELAY_TICKS = builder.defineInRange("greetingDelayTicks", 14, 0, 200);
+        // Legacy delay used when open-found line is disabled / skipped.
+        GREETING_DELAY_TICKS = builder.defineInRange("greetingDelayTicks", 20, 0, 200);
+        // Pause after "Oh! You found the opening" before the personal-helper greeting.
+        OPEN_FOUND_PAUSE_TICKS = builder.defineInRange("openFoundPauseTicks", 20, 0, 100);
         ENABLE_GREETING = builder.define("enableGreeting", true);
         GREETING_VOLUME = builder.defineInRange("greetingVolume", 1.0, 0.0, 2.0);
         GREETING_HEARING_DISTANCE = builder.defineInRange("greetingHearingDistance", 24.0, 8.0, 64.0);

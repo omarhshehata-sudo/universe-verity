@@ -1,9 +1,9 @@
 {
-  "verity.box.anyone_out_there": {
-    "subtitle": "subtitles.universe_verity.box.anyone_out_there",
+  "verity.box.hellooo": {
+    "subtitle": "subtitles.universe_verity.box.hellooo",
     "sounds": [
       {
-        "name": "universe_verity:verity/box/voice/anyone_out_there",
+        "name": "universe_verity:verity/box/voice/hellooo",
         "stream": false,
         "volume": 0.9,
         "pitch": 1.0,
@@ -11,11 +11,11 @@
       }
     ]
   },
-  "verity.box.can_you_hear_me": {
-    "subtitle": "subtitles.universe_verity.box.can_you_hear_me",
+  "verity.box.is_someone_out_there": {
+    "subtitle": "subtitles.universe_verity.box.is_someone_out_there",
     "sounds": [
       {
-        "name": "universe_verity:verity/box/voice/can_you_hear_me",
+        "name": "universe_verity:verity/box/voice/is_someone_out_there",
         "stream": false,
         "volume": 0.9,
         "pitch": 1.0,
@@ -23,15 +23,63 @@
       }
     ]
   },
-  "verity.box.is_someone_there": {
-    "subtitle": "subtitles.universe_verity.box.is_someone_there",
+  "verity.box.i_can_hear_you_moving": {
+    "subtitle": "subtitles.universe_verity.box.i_can_hear_you_moving",
     "sounds": [
       {
-        "name": "universe_verity:verity/box/voice/is_someone_there",
+        "name": "universe_verity:verity/box/voice/i_can_hear_you_moving",
         "stream": false,
         "volume": 0.9,
         "pitch": 1.0,
         "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.could_you_open_this": {
+    "subtitle": "subtitles.universe_verity.box.could_you_open_this",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/could_you_open_this",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.please": {
+    "subtitle": "subtitles.universe_verity.box.please",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/please",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.youre_still_there": {
+    "subtitle": "subtitles.universe_verity.box.youre_still_there",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/youre_still_there",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.oh_you_found_the_opening": {
+    "subtitle": "subtitles.universe_verity.box.oh_you_found_the_opening",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/oh_you_found_the_opening",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
       }
     ]
   },

@@ -145,10 +145,10 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         boolean ownerNearby = owner != null
                 && owner.distanceTo(this) <= VerityCommonConfig.MAXIMUM_HEARING_DISTANCE.get();
 
+        // Fixed sealed voice sequence already ran; idle is visual agitation only (shake SFX silenced).
         int roll = this.random.nextInt(100);
         float near = ownerNearby ? 1.0f : 0.55f;
         if (!ownerNearby) {
-            // Distant: quiet physical motion only (no voice overlap / spam).
             if (roll < 50) {
                 playMovement(VeritySounds.BOX_RUSTLE_1.get(), 0.28f * near, 1.0f, 10);
                 triggerAnimation("rustle_small");
@@ -159,28 +159,13 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
                 playMovement(VeritySounds.BOX_SHIFT.get(), 0.30f * near, 1.0f, 10);
                 triggerAnimation("shift");
             }
-        } else if (roll < 28) {
+        } else if (roll < 30) {
             playMovement(VeritySounds.BOX_RUSTLE_1.get(), 0.48f, 1.0f, 10);
             triggerAnimation("rustle_small");
-        } else if (roll < 48) {
+        } else if (roll < 55) {
             playMovement(VeritySounds.BOX_THUMP.get(), 0.42f, 0.98f, 14);
             triggerAnimation("shake");
-        } else if (roll < 72 && VerityCommonConfig.ENABLE_VOICE_LINES.get()) {
-            String[] lines = {"anyone_out_there", "can_you_hear_me", "is_someone_there"};
-            String next = lines[this.random.nextInt(lines.length)];
-            if (next.equals(lastVoiceLine)) {
-                next = lines[this.random.nextInt(lines.length)];
-            }
-            playVoiceById(next);
-            // If voice could not start, fall back to a physical burst so the cycle never no-ops.
-            if (!isVoiceBusy()) {
-                playMovement(VeritySounds.BOX_THUMP.get(), 0.42f, 0.98f, 14);
-                triggerAnimation("shake");
-            }
-        } else if (roll < 72) {
-            playMovement(VeritySounds.BOX_THUMP.get(), 0.42f, 0.98f, 14);
-            triggerAnimation("shake");
-        } else if (roll < 88) {
+        } else if (roll < 78) {
             playMovement(VeritySounds.BOX_KNOCK_1.get(), 0.58f, 1.0f, 8);
             triggerAnimation("knock");
             scheduleKnockFollowup(7);
@@ -331,30 +316,6 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
             playMovement(VeritySounds.BOX_RUSTLE_2.get(), 0.42f, 1.0f, 12);
             triggerAnimation("interaction_reaction");
         }
-    }
-
-    private void playVoiceById(String id) {
-        if (!VerityCommonConfig.ENABLE_VOICE_LINES.get() || isVoiceBusy() || sfxCooldownTicks > 0) {
-            return;
-        }
-        switch (id) {
-            case "can_you_hear_me" -> {
-                playLocal(VeritySounds.BOX_CAN_YOU_HEAR_ME.get(), 0.82f, 0.98f);
-                setVoiceBusyTicks(VerityBoxSequence.DUR_HEAR_ME);
-            }
-            case "is_someone_there" -> {
-                playLocal(VeritySounds.BOX_IS_SOMEONE_THERE.get(), 0.82f, 0.98f);
-                setVoiceBusyTicks(VerityBoxSequence.DUR_IS_SOMEONE);
-            }
-            default -> {
-                playLocal(VeritySounds.BOX_ANYONE_OUT_THERE.get(), 0.82f, 0.98f);
-                setVoiceBusyTicks(VerityBoxSequence.DUR_ANYONE);
-                id = "anyone_out_there";
-            }
-        }
-        // Gap after voice so movement SFX cannot cut into the tail of the line.
-        sfxCooldownTicks = Math.max(sfxCooldownTicks, 8);
-        lastVoiceLine = id;
     }
 
     private void playLocal(net.minecraft.sounds.SoundEvent sound, float volume, float pitch) {

@@ -8,26 +8,30 @@ import net.minecraftforge.registries.RegistryObject;
 
 /**
  * Server-authoritative sealed-box introduction timeline.
- * Times are in ticks from sequence start (20 ticks = 1 second).
+ * Timeline ticks advance only while no voice line is playing (20 ticks = 1 second).
  * Movement/shake SFX are silenced; visual agitation + voice lines remain.
+ *
+ * Fixed voice order while sealed:
+ * 1 Hellooo → 2 Is someone out there → 3 I can hear you moving → 4 Could you open this
+ * → (longer delay) 5 Please → (very long delay) 6 You're still there
+ * Open handoff (Verity entity): Oh you found the opening → short pause → greeting.
  */
 public final class VerityBoxSequence {
-    public static final int TICK_FIRST_MOVEMENT = 30;   // 1.5s
-    public static final int TICK_TINY_MOVE = 48;        // 2.4s
-    public static final int TICK_FIRST_CALL = 66;       // 3.3s — Is anyone out there?
-    public static final int TICK_QUIET_RUSTLE = 120;    // 6.0s
-    public static final int TICK_KNOCKING = 140;        // 7.0s
-    public static final int TICK_SHIFT = 200;           // 10.0s
-    public static final int TICK_BREATH = 220;          // 11.0s
-    public static final int TICK_SECOND_CALL = 250;     // 12.5s — Can you hear me?
-    public static final int TICK_SMALL_SHAKE = 320;     // 16.0s
-    public static final int TICK_THIRD_CALL = 360;      // 18.0s — Can someone let me out?
-    public static final int TICK_IDLE = 420;            // 21.0s
+    /** Initial quiet before first sealed line. */
+    public static final int TICK_FIRST_CALL = 40; // 2.0s
 
-    // Approximate voice durations in ticks + safety gap (tail silence before next SFX).
-    public static final int DUR_ANYONE = 38;
-    public static final int DUR_HEAR_ME = 34;
-    public static final int DUR_IS_SOMEONE = 42;
+    // Approximate voice durations in ticks + small tail buffer (busy gate).
+    public static final int DUR_HELLOOO = 26;
+    public static final int DUR_IS_SOMEONE_OUT_THERE = 32;
+    public static final int DUR_I_CAN_HEAR_YOU_MOVING = 30;
+    public static final int DUR_COULD_YOU_OPEN_THIS = 26;
+    public static final int DUR_PLEASE = 17;
+    public static final int DUR_YOURE_STILL_THERE = 51;
+    /** Clean open-line duration before post-reveal greeting delay. */
+    public static final int DUR_OH_YOU_FOUND_THE_OPENING = 45;
+
+    /** Legacy alias used by skip-intro helpers. */
+    public static final int TICK_IDLE = 0;
 
     private VerityBoxSequence() {
     }
@@ -55,45 +59,56 @@ public final class VerityBoxSequence {
             box.setIntroStage(VerityBoxStage.INITIAL_SILENCE);
         }
 
-        switch (t) {
-            case TICK_FIRST_MOVEMENT -> {
-                box.setIntroStage(VerityBoxStage.FIRST_MOVEMENT);
-                box.triggerAnimation("rustle_small", true);
-            }
-            case TICK_TINY_MOVE -> box.triggerAnimation("knock", true);
-            case TICK_FIRST_CALL -> {
-                box.setIntroStage(VerityBoxStage.FIRST_CALL);
-                speak(box, VeritySounds.BOX_ANYONE_OUT_THERE, DUR_ANYONE, "anyone_out_there");
-            }
-            case TICK_QUIET_RUSTLE -> box.triggerAnimation("rustle_small", true);
-            case TICK_KNOCKING -> {
-                box.setIntroStage(VerityBoxStage.KNOCKING);
-                box.triggerAnimation("knock", true);
-                box.scheduleKnockFollowup(8);
-            }
-            case TICK_SHIFT -> {
-                box.setIntroStage(VerityBoxStage.MORE_MOVEMENT);
-                box.triggerAnimation("shift", true);
-            }
-            case TICK_BREATH -> {
-                // Visual-only breath beat (shake SFX removed).
-            }
-            case TICK_SECOND_CALL -> {
-                box.setIntroStage(VerityBoxStage.SECOND_CALL);
-                speak(box, VeritySounds.BOX_CAN_YOU_HEAR_ME, DUR_HEAR_ME, "can_you_hear_me");
-            }
-            case TICK_SMALL_SHAKE -> {
-                box.triggerAnimation("shake", true);
-            }
-            case TICK_THIRD_CALL -> {
-                box.setIntroStage(VerityBoxStage.THIRD_CALL);
-                speak(box, VeritySounds.BOX_IS_SOMEONE_THERE, DUR_IS_SOMEONE, "is_someone_there");
-            }
-            default -> {
-            }
+        int pauseBetween = VerityCommonConfig.BOX_VOICE_PAUSE_TICKS.get();
+        int pleaseDelay = VerityCommonConfig.BOX_PLEASE_DELAY_TICKS.get();
+        int stillThereDelay = VerityCommonConfig.BOX_STILL_THERE_DELAY_TICKS.get();
+
+        int tick1 = TICK_FIRST_CALL;
+        int tick2 = tick1 + 1 + pauseBetween;
+        int tick3 = tick2 + 1 + pauseBetween;
+        int tick4 = tick3 + 1 + pauseBetween;
+        int tickPlease = tick4 + 1 + pleaseDelay;
+        int tickStillThere = tickPlease + 1 + stillThereDelay;
+        int tickIdle = tickStillThere + 1;
+
+        // Light visual agitation between lines (no shake SFX).
+        if (t == tick1 - 12) {
+            box.setIntroStage(VerityBoxStage.FIRST_MOVEMENT);
+            box.triggerAnimation("rustle_small", true);
+        } else if (t == tick2 - 10) {
+            box.triggerAnimation("knock", true);
+        } else if (t == tick3 - 10) {
+            box.setIntroStage(VerityBoxStage.MORE_MOVEMENT);
+            box.triggerAnimation("shift", true);
+        } else if (t == tick4 - 10) {
+            box.triggerAnimation("shake", true);
+        } else if (t == tickPlease - 14) {
+            box.triggerAnimation("rustle_small", true);
+        } else if (t == tickStillThere - 16) {
+            box.triggerAnimation("shake", true);
         }
 
-        if (t >= TICK_IDLE && !box.isIntroCompleted()) {
+        if (t == tick1) {
+            box.setIntroStage(VerityBoxStage.FIRST_CALL);
+            speak(box, VeritySounds.BOX_HELLOOO, DUR_HELLOOO, "hellooo");
+        } else if (t == tick2) {
+            box.setIntroStage(VerityBoxStage.SECOND_CALL);
+            speak(box, VeritySounds.BOX_IS_SOMEONE_OUT_THERE, DUR_IS_SOMEONE_OUT_THERE, "is_someone_out_there");
+        } else if (t == tick3) {
+            box.setIntroStage(VerityBoxStage.THIRD_CALL);
+            speak(box, VeritySounds.BOX_I_CAN_HEAR_YOU_MOVING, DUR_I_CAN_HEAR_YOU_MOVING, "i_can_hear_you_moving");
+        } else if (t == tick4) {
+            box.setIntroStage(VerityBoxStage.FOURTH_CALL);
+            speak(box, VeritySounds.BOX_COULD_YOU_OPEN_THIS, DUR_COULD_YOU_OPEN_THIS, "could_you_open_this");
+        } else if (t == tickPlease) {
+            box.setIntroStage(VerityBoxStage.FIFTH_CALL);
+            speak(box, VeritySounds.BOX_PLEASE, DUR_PLEASE, "please");
+        } else if (t == tickStillThere) {
+            box.setIntroStage(VerityBoxStage.IDLE_CALLING);
+            speak(box, VeritySounds.BOX_YOURE_STILL_THERE, DUR_YOURE_STILL_THERE, "youre_still_there");
+        }
+
+        if (t >= tickIdle && !box.isIntroCompleted()) {
             box.setIntroStage(VerityBoxStage.IDLE_CALLING);
             box.setIntroCompleted(true);
             box.resetIdleCooldown();

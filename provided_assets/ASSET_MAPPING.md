@@ -98,3 +98,18 @@ These were synthesized with **ffmpeg `lavfi` noise sources** and band-pass / env
 - anyone_out_there <- Verity-2026-07-17-03-45-Is-anyone-out-there.mp3
 - can_you_hear_me <- Verity-2026-07-17-03-46-[emphasis]-can-you-hear-me.mp3
 - is_someone_there (event kept) <- Verity-2026-07-17-03-47-[emphasis]-can-someone-let-me-out.mp3  (spoken: Can someone let me out?)
+
+## Box voice sequence update 2026-07-18 (1.0.18)
+Retired old muffled lineup from the active sequence (`audio_retired/*_pre_1.0.18.ogg`).
+
+| Runtime path | Event ID | Source MP3 | Processing |
+|--------------|----------|------------|------------|
+| `box/voice/hellooo.ogg` | `verity.box.hellooo` | `Verity-2026-07-18-21-55-Hellooo.mp3` | Muffled |
+| `box/voice/is_someone_out_there.ogg` | `verity.box.is_someone_out_there` | `Verity-2026-07-18-21-55-Is-someone-out-there.mp3` | Muffled |
+| `box/voice/i_can_hear_you_moving.ogg` | `verity.box.i_can_hear_you_moving` | `Verity-2026-07-18-21-56-I-can-hear-you-moving.mp3` | Muffled |
+| `box/voice/could_you_open_this.ogg` | `verity.box.could_you_open_this` | `Verity-2026-07-18-21-56-Could-you-open-this.mp3` | Muffled |
+| `box/voice/please.ogg` | `verity.box.please` | `Verity-2026-07-18-21-57-Please.mp3` | Muffled |
+| `box/voice/youre_still_there.ogg` | `verity.box.youre_still_there` | `Verity-2026-07-18-21-58-Youre-still-there-I-know-you-are.mp3` | Muffled |
+| `box/voice/oh_you_found_the_opening.ogg` | `verity.box.oh_you_found_the_opening` | `Verity-2026-07-18-21-59-Oh-You-found-the-opening.mp3` | **Clean** (on open) |
+
+Defaults: 3s pause between lines 1–4 (`boxVoicePauseTicks=60`); 12s before Please (`boxPleaseDelayTicks=240`); 45s before still-there (`boxStillThereDelayTicks=900`); open line then 1s (`openFoundPauseTicks=20`) then `greeting_personal_helper`.
