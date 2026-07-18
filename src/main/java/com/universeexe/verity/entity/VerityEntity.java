@@ -136,10 +136,17 @@ public class VerityEntity extends PathfinderMob {
         this.noCulling = true;
         this.setPersistenceRequired();
         this.setInvulnerable(true);
+        // Ball form always uses normal Minecraft gravity (break floor → fall).
+        this.setNoGravity(false);
         this.xpReward = 0;
         if (level.isClientSide) {
             this.clientBlinkCooldown = 60 + level.random.nextInt(80);
         }
+    }
+
+    @Override
+    public boolean isNoGravity() {
+        return false;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -258,9 +265,14 @@ public class VerityEntity extends PathfinderMob {
             }
         }
         // Optional stationary lock: server-only, never while thrown or following.
+        // Only damp horizontal motion while on ground — never zero Y or hold midair.
+        // Breaking the block under Verity must let him fall with normal gravity.
         if (!wasThrown && !followingOwner && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
-            this.setDeltaMovement(Vec3.ZERO);
             this.getNavigation().stop();
+            if (this.onGround()) {
+                Vec3 m = this.getDeltaMovement();
+                this.setDeltaMovement(0.0, m.y, 0.0);
+            }
         }
 
         if (followingOwner) {
@@ -794,6 +806,8 @@ public class VerityEntity extends PathfinderMob {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        // Clear any persisted NoGravity from older builds / tools.
+        this.setNoGravity(false);
         if (tag.hasUUID("OwnerUUID")) {
             ownerUuid = tag.getUUID("OwnerUUID");
         }

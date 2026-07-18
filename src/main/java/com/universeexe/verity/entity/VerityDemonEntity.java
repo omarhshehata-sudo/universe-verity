@@ -33,6 +33,12 @@ public class VerityDemonEntity extends PathfinderMob implements GeoEntity {
     public VerityDemonEntity(EntityType<? extends VerityDemonEntity> type, Level level) {
         super(type, level);
         this.setPersistenceRequired();
+        this.setNoGravity(false);
+    }
+
+    @Override
+    public boolean isNoGravity() {
+        return false;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
