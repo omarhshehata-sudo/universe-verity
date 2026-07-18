@@ -19,7 +19,8 @@ Homebrew `ffmpeg` on this machine does not ship `libvorbis`; encoding uses **ogg
 | Runtime path | Category | Source (archived in `audio_originals/`) | Processing |
 |--------------|----------|----------------------------------------|------------|
 | `sounds/verity/voice/greeting_personal_helper.ogg` | PROVIDED_VOICE | `Verity-2026-07-17-02-51-[excited]-hello,-im-verity,-your-personal-helper.mp3` | **Clean** (no muffle); post-reveal greeting |
-| `sounds/verity/voice/okay_where_are_we_going.ogg` | PROVIDED_VOICE | `Verity-2026-07-18-21-38-[excited]-Okay,-So-where-are-we-going.mp3` | **Clean**; FOLLOW intent response |
+| `sounds/verity/voice/okay_where_are_we_going.ogg` | PROVIDED_VOICE | `Verity-2026-07-18-21-38-[excited]-Okay,-So-where-are-we-going.mp3` | **Clean**; FOLLOW intent (50%) |
+| `sounds/verity/voice/alright_right_behind_you.ogg` | PROVIDED_VOICE | `Verity-2026-07-18-21-46-[excited]-alright,[soft]-i-am-right-behind-you! (1).mp3` | **Clean**; FOLLOW intent (50%) |
 | `sounds/verity/box/voice/hello.ogg` | PROVIDED_VOICE | Same as row below (file 2), first **1.0 s** | **Muffled** + fade-out; short “Hellooo?” clip |
 | `sounds/verity/box/voice/hello_long.ogg` | PROVIDED_VOICE | File 2 (full clip) | **Muffled** full take; fallback if short `hello.ogg` trim is awkward in-game |
 | `sounds/verity/box/voice/anyone_out_there.ogg` | PROVIDED_VOICE | `Verity-2026-07-17-02-52-hello,-anyone-out-there,-[shouting]-can-someone.mp3` | **Muffled** full clip (hello + anyone out there + …) |

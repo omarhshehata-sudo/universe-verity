@@ -24,6 +24,7 @@
   "subtitles.universe_verity.box.shifting": "The box shifts",
   "subtitles.universe_verity.verity.greeting_personal_helper": "Verity: Hello, I'm Verity, your personal helper friend. Ask me anything. I know everything.",
   "subtitles.universe_verity.verity.okay_where_are_we_going": "Verity: Okay, so where are we going?",
+  "subtitles.universe_verity.verity.alright_right_behind_you": "Verity: Alright, I am right behind you!",
   "subtitles.universe_verity.verity.reveal_box_open": "Cardboard opens",
   "subtitles.universe_verity.verity.reveal_movement": "Something moves inside the box",
   "commands.universe_verity.usage": "Usage: /verity <intro|box|reveal|entity|greeting|sound|debug>"
