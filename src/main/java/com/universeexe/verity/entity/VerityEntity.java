@@ -14,6 +14,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -77,6 +78,11 @@ public class VerityEntity extends PathfinderMob {
     private int talkTicksRemaining;
     /** After greeting/talk: wait until settled, then force JAR default friendly smile ({@code happy}). */
     private boolean pendingDefaultSmile;
+    /** Delayed fall bounce from verity-5.7.2 {@code causeFallDamage} (1-tick schedule). */
+    private int pendingFallBounceTicks;
+    private double pendingFallBounceY = -1.0;
+    /** Brief hurt face after wall/fall bounce, then restore happy idle. */
+    private int hurtFaceResetTicks;
 
     // Client-only cosmetic state
     private int clientBlinkCooldown;
@@ -158,8 +164,22 @@ public class VerityEntity extends PathfinderMob {
 
     @Override
     public void tick() {
+        // JAR: capture motion before LivingEntity collision so wall bounce can reverse it.
+        Vec3 motionBeforeCollision = this.getDeltaMovement();
         super.tick();
-        if (VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
+
+        boolean wasThrown = this.getPersistentData().getBoolean("WasThrown");
+        // After bounce settles, clear WasThrown so stationary/look-at resume (JAR keeps the flag
+        // only to disable LookAtPlayerGoal; we restore story-entity stationarity on land).
+        if (wasThrown && this.onGround() && pendingFallBounceTicks <= 0) {
+            Vec3 m = this.getDeltaMovement();
+            if (m.horizontalDistanceSqr() < 1.0E-3 && Math.abs(m.y) < 0.08) {
+                this.getPersistentData().putBoolean("WasThrown", false);
+                wasThrown = false;
+            }
+        }
+        // Stationary lock must not run while thrown — it zeroed velocity every tick (throw glitch).
+        if (!wasThrown && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
             this.setDeltaMovement(Vec3.ZERO);
             this.getNavigation().stop();
         }
@@ -167,6 +187,51 @@ public class VerityEntity extends PathfinderMob {
         if (this.level().isClientSide) {
             tickClientVisuals();
             return;
+        }
+
+        // Wall bounce — verity-5.7.2 VerityEntity.tick (horizontalCollision + 0.6 restitution).
+        if (this.horizontalCollision) {
+            double newX = this.getDeltaMovement().x;
+            double newZ = this.getDeltaMovement().z;
+            boolean bounced = false;
+            if (Math.abs(motionBeforeCollision.x) > 0.1 && Math.abs(newX) < 0.02) {
+                newX = -motionBeforeCollision.x * 0.6;
+                bounced = true;
+            }
+            if (Math.abs(motionBeforeCollision.z) > 0.1 && Math.abs(newZ) < 0.02) {
+                newZ = -motionBeforeCollision.z * 0.6;
+                bounced = true;
+            }
+            if (bounced) {
+                this.setDeltaMovement(newX, this.getDeltaMovement().y, newZ);
+                this.hasImpulse = true;
+                applyBounceHurtFace();
+            }
+        }
+
+        // JAR: zero motion in void (Y <= -63).
+        if (this.blockPosition().getY() <= -63) {
+            this.setDeltaMovement(0.0, 0.0, 0.0);
+            this.hasImpulse = true;
+        }
+
+        // 1-tick delayed fall bounce from causeFallDamage.
+        if (pendingFallBounceTicks > 0) {
+            pendingFallBounceTicks--;
+            if (pendingFallBounceTicks == 0 && pendingFallBounceY >= 0.0) {
+                this.setDeltaMovement(this.getDeltaMovement().x, pendingFallBounceY, this.getDeltaMovement().z);
+                this.hasImpulse = true;
+                this.setOnGround(false);
+                applyBounceHurtFace();
+                pendingFallBounceY = -1.0;
+            }
+        }
+        if (hurtFaceResetTicks > 0) {
+            hurtFaceResetTicks--;
+            if (hurtFaceResetTicks == 0) {
+                setFaceVariant("auto");
+                setExpression(VerityExpressionState.HAPPY);
+            }
         }
 
         if (interactionCooldown > 0) {
@@ -189,21 +254,24 @@ public class VerityEntity extends PathfinderMob {
         tryApplyDefaultSmile();
 
         ServerPlayer owner = findOwner();
-        if (faceTicksRemaining > 0 && owner != null) {
-            faceTicksRemaining--;
-            targetYRot = yawToward(owner);
-            float current = this.getYRot();
-            float next = Mth.rotLerp(0.25f, current, targetYRot);
-            this.setYRot(next);
-            this.setYBodyRot(next);
-            this.setYHeadRot(next);
-        } else if (VerityCommonConfig.LOOK_AT_OWNER_AFTER_REVEAL.get() && owner != null
-                && owner.distanceTo(this) < VerityCommonConfig.GREETING_HEARING_DISTANCE.get()) {
-            float desired = yawToward(owner);
-            float next = Mth.rotLerp(0.08f, this.getYRot(), desired);
-            this.setYRot(next);
-            this.setYBodyRot(next);
-            this.setYHeadRot(next);
+        // JAR: LookAtPlayerGoal disabled while WasThrown — skip owner-facing while airborne/thrown.
+        if (!wasThrown) {
+            if (faceTicksRemaining > 0 && owner != null) {
+                faceTicksRemaining--;
+                targetYRot = yawToward(owner);
+                float current = this.getYRot();
+                float next = Mth.rotLerp(0.25f, current, targetYRot);
+                this.setYRot(next);
+                this.setYBodyRot(next);
+                this.setYHeadRot(next);
+            } else if (VerityCommonConfig.LOOK_AT_OWNER_AFTER_REVEAL.get() && owner != null
+                    && owner.distanceTo(this) < VerityCommonConfig.GREETING_HEARING_DISTANCE.get()) {
+                float desired = yawToward(owner);
+                float next = Mth.rotLerp(0.08f, this.getYRot(), desired);
+                this.setYRot(next);
+                this.setYBodyRot(next);
+                this.setYHeadRot(next);
+            }
         }
 
         if (pendingGreeting || (greetingStarted && !greetingCompleted)) {
@@ -220,6 +288,28 @@ public class VerityEntity extends PathfinderMob {
                 }
             }
         }
+    }
+
+    private void applyBounceHurtFace() {
+        setFaceVariant("hurt");
+        hurtFaceResetTicks = 20;
+        this.playSound(SoundEvents.SLIME_SQUISH_SMALL, 1.0f, 1.0f);
+    }
+
+    /**
+     * Fall bounce — verity-5.7.2 {@code causeFallDamage}: after 1 tick,
+     * {@code min(sqrt(fallDistance) * 0.22, 0.7)} upward impulse.
+     */
+    @Override
+    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+        if (!this.level().isClientSide) {
+            if (fallDistance > 0.75f) {
+                pendingFallBounceY = Math.min(Math.sqrt(fallDistance) * 0.22, 0.7);
+                pendingFallBounceTicks = 1;
+            }
+            this.resetFallDistance();
+        }
+        return false;
     }
 
     /**

@@ -31,7 +31,7 @@ public final class VerityItemInteractions {
 
     /**
      * Shift + right-click air: throw Verity with look-vector × 1.5
-     * (JAR: {@code SoundEvents.ENDER_DRAGON_FLAP}).
+     * (JAR: {@code SoundEvents.ENDER_DRAGON_FLAP}, {@code hurtMarked = true}).
      */
     @SubscribeEvent
     public void rightClickAir(PlayerInteractEvent.RightClickItem event) {
@@ -47,34 +47,41 @@ public final class VerityItemInteractions {
             return;
         }
         // Prefer block-place when aiming at a block (avoids throw+place double spawn).
+        // JAR relies on separate RightClickBlock; keep this guard for Forge event overlap.
         HitResult hit = player.pick(player.getBlockReach(), 0.0f, false);
         if (hit.getType() == HitResult.Type.BLOCK) {
             return;
         }
 
-        String variant = VerityVariants.fromStack(stack);
+        String variantToSpawn = "default";
+        if (stack.hasTag() && stack.getTag() != null && stack.getTag().contains(VerityItem.TAG_VARIANT)) {
+            variantToSpawn = stack.getTag().getString(VerityItem.TAG_VARIANT);
+        } else {
+            variantToSpawn = VerityVariants.fromStack(stack);
+        }
         stack.shrink(1);
         Vec3 launchVelocity = player.getLookAngle().normalize().scale(1.5);
 
-        VerityEntity spawned = VerityEntities.VERITY.get().create(player.level());
-        if (spawned == null) {
-            return;
-        }
-        BlockPos spawnBlock = player.blockPosition().offset(0, 1, 0);
-        spawned.setPos(Vec3.atCenterOf(spawnBlock));
-        spawned.setFaceVariant(variant);
-        spawned.setExpression(VerityExpressionState.HAPPY);
-        spawned.setTalking(false);
-        spawned.getPersistentData().putBoolean("WasThrown", true);
-        spawned.setOwnerUUID(player.getUUID());
-        player.level().addFreshEntity(spawned);
-        player.level().playSound(null, player.blockPosition(), SoundEvents.ENDER_DRAGON_FLAP,
-                SoundSource.PLAYERS, 1.0f, 1.0f);
-        spawned.setDeltaMovement(launchVelocity);
-        spawned.hasImpulse = true;
+        VerityEntity newVerity = VerityEntities.VERITY.get().create(player.level());
+        if (newVerity != null) {
+            // JAR: setPos(blockPosition().offset(0,1,0).getCenter())
+            newVerity.setPos(Vec3.atCenterOf(player.blockPosition().offset(0, 1, 0)));
+            newVerity.setFaceVariant(VerityVariants.sanitize(variantToSpawn));
+            newVerity.setExpression(VerityExpressionState.HAPPY);
+            newVerity.setTalking(false);
+            newVerity.getPersistentData().putBoolean("WasThrown", true);
+            newVerity.setOwnerUUID(player.getUUID());
+            player.level().addFreshEntity(newVerity);
+            // JAR plays TTS "AAAAAAAAHHH" — skipped (no TTS stack in this mod).
+            player.level().playSound(null, player.blockPosition(), SoundEvents.ENDER_DRAGON_FLAP,
+                    SoundSource.PLAYERS, 1.0f, 1.0f);
+            newVerity.setDeltaMovement(launchVelocity);
+            // JAR: f_19864_ = true → hurtMarked (forces client velocity sync). NOT hasImpulse.
+            newVerity.hurtMarked = true;
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            VerityPlayerData.setVerityUuid(serverPlayer, spawned.getUUID());
+            if (player instanceof ServerPlayer serverPlayer) {
+                VerityPlayerData.setVerityUuid(serverPlayer, newVerity.getUUID());
+            }
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
