@@ -93,6 +93,9 @@ public class VerityEntity extends PathfinderMob {
     private int hurtFaceResetTicks;
     /** Server tick when setWasThrown(true) was last applied. */
     private int thrownAtTick = -1000;
+    /** When true, Verity pathfinds toward the owning player and rolls while moving. */
+    private boolean followingOwner;
+    private int followRollAnimCooldown;
 
     // Client-only cosmetic state
     private int clientBlinkCooldown;
@@ -213,10 +216,14 @@ public class VerityEntity extends PathfinderMob {
                 wasThrown = false;
             }
         }
-        // Optional stationary lock: server-only, never while thrown.
-        if (!wasThrown && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
+        // Optional stationary lock: server-only, never while thrown or following.
+        if (!wasThrown && !followingOwner && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
             this.setDeltaMovement(Vec3.ZERO);
             this.getNavigation().stop();
+        }
+
+        if (followingOwner) {
+            tickFollowOwner();
         }
 
         // Wall bounce — verity-5.7.2 VerityEntity.tick (horizontalCollision + 0.6 restitution).
@@ -693,6 +700,7 @@ public class VerityEntity extends PathfinderMob {
         tag.putString("CurrentExpression", this.entityData.get(DATA_EXPRESSION));
         tag.putString("FaceVariant", this.entityData.get(DATA_FACE_VARIANT));
         tag.putBoolean("WasThrown", isWasThrown());
+        tag.putBoolean("FollowingOwner", followingOwner);
         tag.putBoolean("InvulnerableStoryEntity", true);
         tag.putBoolean("StationaryIntroductionState", true);
     }
@@ -723,6 +731,7 @@ public class VerityEntity extends PathfinderMob {
         } else if (this.getPersistentData().getBoolean("WasThrown")) {
             setWasThrown(true);
         }
+        followingOwner = tag.getBoolean("FollowingOwner");
         if (greetingStarted && !greetingCompleted) {
             greetingCompleted = true;
             pendingGreeting = false;
@@ -736,6 +745,86 @@ public class VerityEntity extends PathfinderMob {
     @Nullable
     public UUID getOwnerUUID() {
         return ownerUuid;
+    }
+
+    /** Enable talking mouth for a fixed tick window (voice-line reactions). */
+    public void beginTalkingForTicks(int ticks) {
+        setTalking(true);
+        this.talkTicksRemaining = Math.max(1, ticks);
+    }
+
+    /**
+     * Begin following the owning player. Clears stationary lock while active.
+     * Visual roll comes from horizontal movement ({@link com.universeexe.verity.client.util.VerityRollCalculator}).
+     */
+    public void startFollowingOwner() {
+        this.followingOwner = true;
+        this.followRollAnimCooldown = 0;
+        setWasThrown(false);
+        setExpression(VerityExpressionState.HAPPY);
+        triggerAnimation("roll_normal");
+    }
+
+    public void stopFollowing() {
+        if (!this.followingOwner) {
+            this.getNavigation().stop();
+            return;
+        }
+        this.followingOwner = false;
+        this.followRollAnimCooldown = 0;
+        this.getNavigation().stop();
+        triggerAnimation("stop_settle");
+        requestDefaultSmile();
+    }
+
+    public boolean isFollowingOwner() {
+        return followingOwner;
+    }
+
+    private void tickFollowOwner() {
+        ServerPlayer owner = findOwner();
+        if (owner == null || !owner.isAlive() || owner.level() != this.level()) {
+            stopFollowing();
+            return;
+        }
+
+        double distSq = this.distanceToSqr(owner);
+        // Stay close: stop pathing inside ~2 blocks, resume beyond ~2.5 (hysteresis).
+        if (distSq < 4.0) {
+            this.getNavigation().stop();
+            if (followRollAnimCooldown <= 0 && !"idle".equals(getSyncedAnimation())
+                    && !"stop_settle".equals(getSyncedAnimation())) {
+                triggerAnimation("idle");
+            }
+            return;
+        }
+
+        this.getNavigation().moveTo(owner, 1.15D);
+        updateFollowRollAnimation();
+    }
+
+    private void updateFollowRollAnimation() {
+        if (followRollAnimCooldown > 0) {
+            followRollAnimCooldown--;
+            return;
+        }
+        Vec3 motion = this.getDeltaMovement();
+        double horizontal = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+        if (horizontal < 0.02 && !this.getNavigation().isInProgress()) {
+            return;
+        }
+        String anim;
+        if (horizontal < 0.08) {
+            anim = "roll_slow";
+        } else if (horizontal < 0.18) {
+            anim = "roll_normal";
+        } else {
+            anim = "roll_fast";
+        }
+        if (!anim.equals(getSyncedAnimation())) {
+            triggerAnimation(anim);
+        }
+        followRollAnimCooldown = 8;
     }
 
     public boolean isGreetingStarted() {

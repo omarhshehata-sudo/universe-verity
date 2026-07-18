@@ -126,6 +126,18 @@
       }
     ]
   },
+  "verity.voice.okay_where_are_we_going": {
+    "subtitle": "subtitles.universe_verity.verity.okay_where_are_we_going",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/okay_where_are_we_going",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
   "verity.intro.video_audio": {
     "subtitle": "subtitles.universe_verity.intro.video",
     "sounds": [
