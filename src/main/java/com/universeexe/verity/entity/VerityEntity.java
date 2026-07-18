@@ -194,32 +194,13 @@ public class VerityEntity extends PathfinderMob {
         this.pendingGreeting = VerityCommonConfig.ENABLE_GREETING.get();
         this.greetingStarted = false;
         this.greetingCompleted = false;
-        int delayTicks = VerityCommonConfig.GREETING_DELAY_TICKS.get();
-        if (VerityCommonConfig.ENABLE_VOICE_LINES.get()) {
-            // Open line, then ~1s pause, then personal-helper greeting.
-            playOpenFoundLine();
-            delayTicks = VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING
-                    + VerityCommonConfig.OPEN_FOUND_PAUSE_TICKS.get();
-        }
-        this.greetingStageTicks = -delayTicks;
+        // Brief settle delay, then personal-helper greeting (no "found the opening" line).
+        this.greetingStageTicks = -VerityCommonConfig.GREETING_DELAY_TICKS.get();
         this.faceTicksRemaining = 12;
         this.targetYRot = yawToward(owner);
         setExpression(VerityExpressionState.GREETING);
         triggerAnimation("reveal");
         triggerBounce();
-    }
-
-    private void playOpenFoundLine() {
-        if (this.level().isClientSide) {
-            return;
-        }
-        float volume = VerityCommonConfig.GREETING_VOLUME.get().floatValue()
-                * (VerityCommonConfig.GREETING_HEARING_DISTANCE.get().floatValue() / 16f);
-        float vol = Math.min(0.95f, Math.max(0.05f, volume));
-        this.level().playSound(null, getX(), getY(), getZ(),
-                VeritySounds.BOX_OH_YOU_FOUND_THE_OPENING.get(), SoundSource.NEUTRAL, vol, 1.0f);
-        beginTalkingForTicks(VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING);
-        VerityDebug.log("Played open-found line from {}", this.getUUID());
     }
 
     public void triggerBounce() {

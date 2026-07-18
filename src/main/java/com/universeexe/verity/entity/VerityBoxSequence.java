@@ -14,7 +14,7 @@ import net.minecraftforge.registries.RegistryObject;
  * Fixed voice order while sealed:
  * 1 Hellooo → 2 Is someone out there → 3 I can hear you moving → 4 Could you open this
  * → (longer delay) 5 Please → (very long delay) 6 You're still there
- * Open handoff (Verity entity): Oh you found the opening → short pause → greeting.
+ * Open handoff (Verity entity): brief settle → personal-helper greeting.
  */
 public final class VerityBoxSequence {
     /** Initial quiet before first sealed line. */
