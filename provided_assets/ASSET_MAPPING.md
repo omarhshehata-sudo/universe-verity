@@ -113,3 +113,14 @@ Retired old muffled lineup from the active sequence (`audio_retired/*_pre_1.0.18
 | `box/voice/oh_you_found_the_opening.ogg` | `verity.box.oh_you_found_the_opening` | `Verity-2026-07-18-21-59-Oh-You-found-the-opening.mp3` | **Clean** (on open) |
 
 Defaults: 3s pause between lines 1–4 (`boxVoicePauseTicks=60`); 12s before Please (`boxPleaseDelayTicks=240`); 45s before still-there (`boxStillThereDelayTicks=900`); open line then 1s (`openFoundPauseTicks=20`) then `greeting_personal_helper`.
+
+## HELLO_VERITY responses 2026-07-18 (1.0.18)
+
+| Runtime path | Event ID | Source MP3 | Notes |
+|--------------|----------|------------|-------|
+| `voice/hello_hoping_you_would_talk.ogg` | `verity.voice.hello_hoping_you_would_talk` | `Verity-2026-07-18-22-02-Hello-I-was-hoping…` | HELLO A (50%) |
+| `voice/hello_again.ogg` | `verity.voice.hello_again` | `Verity-2026-07-18-22-03-Hello-again.mp3` | HELLO B (50%) |
+| `voice/your_voice_sounds_exactly.ogg` | `verity.voice.your_voice_sounds_exactly` | whisper “Your voice sounds…” | First hello only |
+| `voice/i_mean_imagined_it.ogg` | `verity.voice.i_mean_imagined_it` | whisper “I mean… imagined it.” | First hello only |
+
+Flag: `VerityHelloWhisperPlayed` on player persistent data (reset with intro reset).

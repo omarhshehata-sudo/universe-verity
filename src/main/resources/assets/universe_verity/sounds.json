@@ -210,6 +210,54 @@
       }
     ]
   },
+  "verity.voice.hello_hoping_you_would_talk": {
+    "subtitle": "subtitles.universe_verity.verity.hello_hoping_you_would_talk",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/hello_hoping_you_would_talk",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.voice.hello_again": {
+    "subtitle": "subtitles.universe_verity.verity.hello_again",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/hello_again",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.voice.your_voice_sounds_exactly": {
+    "subtitle": "subtitles.universe_verity.verity.your_voice_sounds_exactly",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/your_voice_sounds_exactly",
+        "stream": false,
+        "volume": 0.88,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.voice.i_mean_imagined_it": {
+    "subtitle": "subtitles.universe_verity.verity.i_mean_imagined_it",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/i_mean_imagined_it",
+        "stream": false,
+        "volume": 0.88,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
   "verity.intro.video_audio": {
     "subtitle": "subtitles.universe_verity.intro.video",
     "sounds": [

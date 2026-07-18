@@ -32,6 +32,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -72,6 +73,14 @@ public class VerityEntity extends PathfinderMob {
     /** Minimum ticks after throw before WasThrown may clear (prevents instant settle lock). */
     private static final int THROW_SETTLE_MIN_TICKS = 12;
 
+    /** HELLO response busy ticks (clip length + small tail). */
+    public static final int DUR_HELLO_HOPING = 58;
+    public static final int DUR_HELLO_AGAIN = 25;
+    public static final int DUR_YOUR_VOICE_SOUNDS_EXACTLY = 58;
+    public static final int DUR_I_MEAN_IMAGINED_IT = 39;
+    private static final int HELLO_GAP_AFTER_MAIN_TICKS = 8;
+    private static final int HELLO_WHISPER_PAUSE_TICKS = 12;
+
     @Nullable
     private UUID ownerUuid;
     private boolean revealCompleted = true;
@@ -96,6 +105,12 @@ public class VerityEntity extends PathfinderMob {
     /** When true, Verity pathfinds toward the owning player and rolls while moving. */
     private boolean followingOwner;
     private int followRollAnimCooldown;
+    /** Server-side sequenced voice lines (HELLO follow-up, etc.). */
+    private final ArrayDeque<VoiceCue> voiceCueQueue = new ArrayDeque<>();
+    private int voiceCueCooldownTicks;
+
+    private record VoiceCue(net.minecraft.sounds.SoundEvent sound, int durationTicks, int pauseAfterTicks) {
+    }
 
     // Client-only cosmetic state
     private int clientBlinkCooldown;
@@ -293,11 +308,12 @@ public class VerityEntity extends PathfinderMob {
         if (interactionCooldown > 0) {
             interactionCooldown--;
         }
+        tickVoiceCueQueue();
         if (talkTicksRemaining > 0) {
             talkTicksRemaining--;
             if (talkTicksRemaining == 0) {
                 setTalking(false);
-                if (!pendingGreeting && !(greetingStarted && !greetingCompleted)) {
+                if (!pendingGreeting && !(greetingStarted && !greetingCompleted) && voiceCueQueue.isEmpty()) {
                     requestDefaultSmile();
                 }
             }
@@ -770,6 +786,74 @@ public class VerityEntity extends PathfinderMob {
     public void beginTalkingForTicks(int ticks) {
         setTalking(true);
         this.talkTicksRemaining = Math.max(1, ticks);
+    }
+
+    /**
+     * HELLO_VERITY response: server picks A/B 50/50 (synced via playSound), then optional one-time whisper pair.
+     */
+    public void playHelloVoiceResponse(boolean includeWhisperFollowup) {
+        if (this.level().isClientSide) {
+            return;
+        }
+        clearVoiceCueQueue();
+        boolean pickHoping = this.random.nextBoolean();
+        net.minecraft.sounds.SoundEvent main = pickHoping
+                ? VeritySounds.VOICE_HELLO_HOPING_YOU_WOULD_TALK.get()
+                : VeritySounds.VOICE_HELLO_AGAIN.get();
+        int mainDur = pickHoping ? DUR_HELLO_HOPING : DUR_HELLO_AGAIN;
+        if (includeWhisperFollowup) {
+            enqueueVoiceCue(main, mainDur, HELLO_GAP_AFTER_MAIN_TICKS);
+            enqueueVoiceCue(VeritySounds.VOICE_YOUR_VOICE_SOUNDS_EXACTLY.get(),
+                    DUR_YOUR_VOICE_SOUNDS_EXACTLY, HELLO_WHISPER_PAUSE_TICKS);
+            enqueueVoiceCue(VeritySounds.VOICE_I_MEAN_IMAGINED_IT.get(), DUR_I_MEAN_IMAGINED_IT, 0);
+        } else {
+            enqueueVoiceCue(main, mainDur, 0);
+        }
+        VerityDebug.log("Hello voice response from {} (whisperFollowup={})", this.getUUID(), includeWhisperFollowup);
+    }
+
+    public void clearVoiceCueQueue() {
+        voiceCueQueue.clear();
+        voiceCueCooldownTicks = 0;
+    }
+
+    public void enqueueVoiceCue(net.minecraft.sounds.SoundEvent sound, int durationTicks, int pauseAfterTicks) {
+        if (sound == null || this.level().isClientSide) {
+            return;
+        }
+        voiceCueQueue.addLast(new VoiceCue(sound, Math.max(1, durationTicks), Math.max(0, pauseAfterTicks)));
+        if (voiceCueCooldownTicks <= 0) {
+            playNextVoiceCue();
+        }
+    }
+
+    private void tickVoiceCueQueue() {
+        if (voiceCueCooldownTicks <= 0) {
+            return;
+        }
+        voiceCueCooldownTicks--;
+        if (voiceCueCooldownTicks == 0) {
+            playNextVoiceCue();
+        }
+    }
+
+    private void playNextVoiceCue() {
+        VoiceCue cue = voiceCueQueue.pollFirst();
+        if (cue == null) {
+            return;
+        }
+        this.level().playSound(
+                null,
+                getX(),
+                getY(),
+                getZ(),
+                cue.sound(),
+                SoundSource.NEUTRAL,
+                0.95f,
+                1.0f
+        );
+        beginTalkingForTicks(cue.durationTicks());
+        voiceCueCooldownTicks = cue.durationTicks() + cue.pauseAfterTicks();
     }
 
     /**

@@ -30,6 +30,10 @@
   "subtitles.universe_verity.verity.okay_where_are_we_going": "Verity: Okay, so where are we going?",
   "subtitles.universe_verity.verity.alright_right_behind_you": "Verity: Alright, I am right behind you!",
   "subtitles.universe_verity.verity.lead_the_way": "Verity: Lead the way.",
+  "subtitles.universe_verity.verity.hello_hoping_you_would_talk": "Verity: Hello! I was hoping you would talk to me.",
+  "subtitles.universe_verity.verity.hello_again": "Verity: Hello again.",
+  "subtitles.universe_verity.verity.your_voice_sounds_exactly": "Verity: Your voice sounds exactly how I remembered…",
+  "subtitles.universe_verity.verity.i_mean_imagined_it": "Verity: I mean… imagined it.",
   "subtitles.universe_verity.verity.reveal_box_open": "Cardboard opens",
   "subtitles.universe_verity.verity.reveal_movement": "Something moves inside the box",
   "commands.universe_verity.usage": "Usage: /verity <intro|box|reveal|entity|greeting|sound|debug>"

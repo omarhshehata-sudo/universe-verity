@@ -33,6 +33,10 @@ public final class VeritySounds {
     public static final RegistryObject<SoundEvent> VOICE_OKAY_WHERE_ARE_WE_GOING = register("verity.voice.okay_where_are_we_going");
     public static final RegistryObject<SoundEvent> VOICE_ALRIGHT_RIGHT_BEHIND_YOU = register("verity.voice.alright_right_behind_you");
     public static final RegistryObject<SoundEvent> VOICE_LEAD_THE_WAY = register("verity.voice.lead_the_way");
+    public static final RegistryObject<SoundEvent> VOICE_HELLO_HOPING_YOU_WOULD_TALK = register("verity.voice.hello_hoping_you_would_talk");
+    public static final RegistryObject<SoundEvent> VOICE_HELLO_AGAIN = register("verity.voice.hello_again");
+    public static final RegistryObject<SoundEvent> VOICE_YOUR_VOICE_SOUNDS_EXACTLY = register("verity.voice.your_voice_sounds_exactly");
+    public static final RegistryObject<SoundEvent> VOICE_I_MEAN_IMAGINED_IT = register("verity.voice.i_mean_imagined_it");
     public static final RegistryObject<SoundEvent> INTRO_VIDEO_AUDIO = register("verity.intro.video_audio");
 
     private static final Map<String, RegistryObject<SoundEvent>> BY_ID = new LinkedHashMap<>();
@@ -57,6 +61,10 @@ public final class VeritySounds {
         BY_ID.put("verity.voice.okay_where_are_we_going", VOICE_OKAY_WHERE_ARE_WE_GOING);
         BY_ID.put("verity.voice.alright_right_behind_you", VOICE_ALRIGHT_RIGHT_BEHIND_YOU);
         BY_ID.put("verity.voice.lead_the_way", VOICE_LEAD_THE_WAY);
+        BY_ID.put("verity.voice.hello_hoping_you_would_talk", VOICE_HELLO_HOPING_YOU_WOULD_TALK);
+        BY_ID.put("verity.voice.hello_again", VOICE_HELLO_AGAIN);
+        BY_ID.put("verity.voice.your_voice_sounds_exactly", VOICE_YOUR_VOICE_SOUNDS_EXACTLY);
+        BY_ID.put("verity.voice.i_mean_imagined_it", VOICE_I_MEAN_IMAGINED_IT);
         BY_ID.put("verity.intro.video_audio", INTRO_VIDEO_AUDIO);
     }
 

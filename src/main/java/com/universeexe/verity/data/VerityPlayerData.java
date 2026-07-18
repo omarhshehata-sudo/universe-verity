@@ -111,6 +111,14 @@ public final class VerityPlayerData {
         return get(player).getBoolean(VerityIntroDataKeys.GREETING_COMPLETED);
     }
 
+    public static boolean hasPlayedHelloWhisper(Player player) {
+        return get(player).getBoolean(VerityIntroDataKeys.HELLO_WHISPER_PLAYED);
+    }
+
+    public static void setHelloWhisperPlayed(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.HELLO_WHISPER_PLAYED, value);
+    }
+
     public static boolean isPendingSpawn(Player player) {
         return get(player).getBoolean(VerityIntroDataKeys.PENDING_SPAWN);
     }
@@ -137,6 +145,7 @@ public final class VerityPlayerData {
         tag.remove(VerityIntroDataKeys.ENTITY_UUID);
         tag.putBoolean(VerityIntroDataKeys.GREETING_PLAYED, false);
         tag.putBoolean(VerityIntroDataKeys.GREETING_COMPLETED, false);
+        tag.putBoolean(VerityIntroDataKeys.HELLO_WHISPER_PLAYED, false);
         tag.putBoolean(VerityIntroDataKeys.PENDING_SPAWN, false);
         tag.putInt(VerityIntroDataKeys.SPAWN_RETRY_COUNT, 0);
         tag.putString(VerityIntroDataKeys.INTRO_STAGE, "");
