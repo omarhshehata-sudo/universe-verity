@@ -150,6 +150,18 @@
       }
     ]
   },
+  "verity.voice.lead_the_way": {
+    "subtitle": "subtitles.universe_verity.verity.lead_the_way",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/lead_the_way",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
   "verity.intro.video_audio": {
     "subtitle": "subtitles.universe_verity.intro.video",
     "sounds": [

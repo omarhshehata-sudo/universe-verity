@@ -28,6 +28,7 @@ public final class VeritySounds {
     public static final RegistryObject<SoundEvent> GREETING_PERSONAL_HELPER = register("verity.greeting.personal_helper");
     public static final RegistryObject<SoundEvent> VOICE_OKAY_WHERE_ARE_WE_GOING = register("verity.voice.okay_where_are_we_going");
     public static final RegistryObject<SoundEvent> VOICE_ALRIGHT_RIGHT_BEHIND_YOU = register("verity.voice.alright_right_behind_you");
+    public static final RegistryObject<SoundEvent> VOICE_LEAD_THE_WAY = register("verity.voice.lead_the_way");
     public static final RegistryObject<SoundEvent> INTRO_VIDEO_AUDIO = register("verity.intro.video_audio");
 
     private static final Map<String, RegistryObject<SoundEvent>> BY_ID = new LinkedHashMap<>();
@@ -47,6 +48,7 @@ public final class VeritySounds {
         BY_ID.put("verity.greeting.personal_helper", GREETING_PERSONAL_HELPER);
         BY_ID.put("verity.voice.okay_where_are_we_going", VOICE_OKAY_WHERE_ARE_WE_GOING);
         BY_ID.put("verity.voice.alright_right_behind_you", VOICE_ALRIGHT_RIGHT_BEHIND_YOU);
+        BY_ID.put("verity.voice.lead_the_way", VOICE_LEAD_THE_WAY);
         BY_ID.put("verity.intro.video_audio", INTRO_VIDEO_AUDIO);
     }
 
