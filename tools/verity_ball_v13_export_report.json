@@ -1,0 +1,63 @@
+{
+	"source_bbmodel": "/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball_v1.3/verity_ball_model.bbmodel",
+	"mesh_blocks": 0.6875,
+	"target_hitbox": {
+		"width": 0.6,
+		"height": 0.6,
+		"depth": 0.6,
+		"note": "Perfect sphere: equal width/height/depth = 0.60 (matches yellow ball diameter)."
+	},
+	"scale_factors": {
+		"x": 0.8727272727272727,
+		"y": 0.8727272727272727,
+		"z": 0.8727272727272727
+	},
+	"bones": [
+		"root",
+		"body",
+		"body_roll",
+		"face_root",
+		"face_neutral",
+		"face_greeting",
+		"face_listening",
+		"face_blink",
+		"mouth",
+		"expression_root"
+	],
+	"animations": [
+		"animation.verity.idle",
+		"animation.verity.reveal",
+		"animation.verity.talk",
+		"animation.verity.greeting",
+		"animation.verity.listening",
+		"animation.verity.blink",
+		"animation.verity.long_blink",
+		"animation.verity.roll_slow",
+		"animation.verity.roll_normal",
+		"animation.verity.roll_fast",
+		"animation.verity.stop_settle",
+		"animation.verity.expression_neutral",
+		"animation.verity.expression_greeting",
+		"animation.verity.expression_listening",
+		"animation.verity.expression_blink",
+		"animation.verity.expression_long_blink"
+	],
+	"atlas": "/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity.png",
+	"atlas_size": [
+		1024,
+		1024
+	],
+	"body_cubes": 1114,
+	"written": [
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geo/verity.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geo/entity/verity.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geckolib/geo/verity.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geckolib/geo/entity/verity.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/animations/verity.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/animations/entity/verity.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geckolib/animations/verity.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geckolib/animations/entity/verity.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity.png"
+	],
+	"limitation": "Figura mesh cannot be loaded by GeckoLib; no extra mods required. Approximated with a dense voxel+shell cube sphere (AABB 11×11×11), uniform 0.60 diameter hitbox/scale, V1.3 yellow + face textures preserved."
+}

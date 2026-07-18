@@ -1,0 +1,140 @@
+{
+  "verity.box.anyone_out_there": {
+    "subtitle": "subtitles.universe_verity.box.anyone_out_there",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/anyone_out_there",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.can_you_hear_me": {
+    "subtitle": "subtitles.universe_verity.box.can_you_hear_me",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/can_you_hear_me",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.is_someone_there": {
+    "subtitle": "subtitles.universe_verity.box.is_someone_there",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/voice/is_someone_there",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.box.rustle_1": {
+    "subtitle": "subtitles.universe_verity.box.rustling",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/rustle_1",
+        "volume": 0.75,
+        "attenuation_distance": 10
+      }
+    ]
+  },
+  "verity.box.rustle_2": {
+    "subtitle": "subtitles.universe_verity.box.rustling",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/rustle_2",
+        "volume": 0.75,
+        "attenuation_distance": 10
+      }
+    ]
+  },
+  "verity.box.knock_1": {
+    "subtitle": "subtitles.universe_verity.box.knocking",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/knocks/knock_1",
+        "volume": 0.8,
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "verity.box.knock_2": {
+    "subtitle": "subtitles.universe_verity.box.knocking",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/knocks/knock_2",
+        "volume": 0.8,
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "verity.box.shift": {
+    "subtitle": "subtitles.universe_verity.box.shifting",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/shift",
+        "volume": 0.72,
+        "attenuation_distance": 10
+      }
+    ]
+  },
+  "verity.box.thump": {
+    "subtitle": "subtitles.universe_verity.box.shifting",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/thump",
+        "volume": 0.7,
+        "attenuation_distance": 10
+      }
+    ]
+  },
+  "verity.reveal.box_open": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_box_open",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/reveal/box_open",
+        "volume": 0.78,
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "verity.reveal.movement": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_movement",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/rustle_2",
+        "volume": 0.7,
+        "attenuation_distance": 10
+      }
+    ]
+  },
+  "verity.greeting.personal_helper": {
+    "subtitle": "subtitles.universe_verity.verity.greeting_personal_helper",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/voice/greeting_personal_helper",
+        "stream": true,
+        "volume": 0.88,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.intro.video_audio": {
+    "subtitle": "subtitles.universe_verity.intro.video",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/intro/intro_video_audio",
+        "stream": true,
+        "volume": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  }
+}

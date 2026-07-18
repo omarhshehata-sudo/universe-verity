@@ -1,0 +1,76 @@
+{
+	"written_files": [
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geo/verity_box.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/geo/verity.geo.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/animations/verity_box.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/animations/verity.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity_box.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity_face_idle.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/src/main/resources/assets/universe_verity/textures/entity/verity_face_speak.png"
+	],
+	"provided_assets_copied": [
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/cardboard_box/cardboard_box_model.bbmodel",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/cardboard_box/cardboardboxtexture.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/cardboard_box/cardboard.animation.json",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/verity_ball_model.bbmodel",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/sus.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/speak.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/verity_base_texture.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/idle.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/avatar.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/bored.png",
+		"/Users/omarshehata/.cursor/Universe.exe/universe-verity/provided_assets/verity_ball/sus_talk.png"
+	],
+	"verity_box_bones": [
+		"root",
+		"cardboard",
+		"lids",
+		"right_lid",
+		"left_lid"
+	],
+	"verity_bones": [
+		"root",
+		"body",
+		"face_idle",
+		"face_speak"
+	],
+	"verity_box_animations": [
+		"animation.verity_box.shake",
+		"animation.verity_box.open",
+		"animation.verity_box.idle",
+		"animation.verity_box.rustle_small",
+		"animation.verity_box.knock",
+		"animation.verity_box.shift",
+		"animation.verity_box.interaction_reaction"
+	],
+	"verity_animations": [
+		"animation.verity.idle",
+		"animation.verity.reveal",
+		"animation.verity.talk",
+		"animation.verity.greeting"
+	],
+	"suggested_hitboxes": {
+		"verity_box": {
+			"width": 0.5,
+			"height": 0.5,
+			"depth": 0.62,
+			"min_y_blocks": 0.0,
+			"max_y_blocks": 0.5
+		},
+		"verity": {
+			"width": 0.55,
+			"height": 0.55,
+			"depth": 0.55,
+			"min_y_blocks": 0.0,
+			"max_y_blocks": 0.55
+		}
+	},
+	"limitations": [
+		"Figura mesh sphere (762 verts) replaced with 1 main 8x8x8 cube + 6 edge filler cubes.",
+		"Face expression variants (sus, bored) omitted; only face_idle and face_speak exported.",
+		"Figura accessory bones (box, item pivots) excluded from Verity entity geo.",
+		"Bedrock Z-axis mirroring applied to pivots/origins; numeric rotation Z values mirrored.",
+		"Molang expression keyframes preserved as strings for GeckoLib runtime evaluation."
+	]
+}
