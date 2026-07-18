@@ -78,8 +78,14 @@ public class VerityEntity extends PathfinderMob {
     public static final int DUR_HELLO_AGAIN = 25;
     public static final int DUR_YOUR_VOICE_SOUNDS_EXACTLY = 58;
     public static final int DUR_I_MEAN_IMAGINED_IT = 39;
+    /** FOLLOW response busy ticks (clip length + small tail). */
+    public static final int DUR_OKAY_WHERE_ARE_WE_GOING = 45;
+    public static final int DUR_ALRIGHT_RIGHT_BEHIND_YOU = 60;
+    public static final int DUR_LEAD_THE_WAY = 26;
     private static final int HELLO_GAP_AFTER_MAIN_TICKS = 8;
     private static final int HELLO_WHISPER_PAUSE_TICKS = 12;
+    /** Hurt face duration after bounce/damage before returning to happy idle. */
+    private static final int HURT_FACE_DURATION_TICKS = 200;
 
     @Nullable
     private UUID ownerUuid;
@@ -205,6 +211,7 @@ public class VerityEntity extends PathfinderMob {
         float vol = Math.min(0.95f, Math.max(0.05f, volume));
         this.level().playSound(null, getX(), getY(), getZ(),
                 VeritySounds.BOX_OH_YOU_FOUND_THE_OPENING.get(), SoundSource.NEUTRAL, vol, 1.0f);
+        beginTalkingForTicks(VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING);
         VerityDebug.log("Played open-found line from {}", this.getUUID());
     }
 
@@ -300,8 +307,7 @@ public class VerityEntity extends PathfinderMob {
         if (hurtFaceResetTicks > 0) {
             hurtFaceResetTicks--;
             if (hurtFaceResetTicks == 0) {
-                setFaceVariant("auto");
-                setExpression(VerityExpressionState.HAPPY);
+                clearHurtFaceToHappy();
             }
         }
 
@@ -363,9 +369,34 @@ public class VerityEntity extends PathfinderMob {
     }
 
     private void applyBounceHurtFace() {
-        setFaceVariant("hurt");
-        hurtFaceResetTicks = 20;
+        applyHurtFace();
         this.playSound(SoundEvents.SLIME_SQUISH_SMALL, 1.0f, 1.0f);
+    }
+
+    /**
+     * Show hurt face, then auto-return to happy idle after {@link #HURT_FACE_DURATION_TICKS}.
+     * Calling again while already hurt resets the 10s timer.
+     */
+    public void applyHurtFace() {
+        if (this.level().isClientSide) {
+            return;
+        }
+        pendingDefaultSmile = false;
+        setTalking(false);
+        talkTicksRemaining = 0;
+        setFaceVariant("hurt");
+        setExpression(VerityExpressionState.HAPPY);
+        hurtFaceResetTicks = HURT_FACE_DURATION_TICKS;
+    }
+
+    private void clearHurtFaceToHappy() {
+        hurtFaceResetTicks = 0;
+        setFaceVariant("auto");
+        setExpression(VerityExpressionState.HAPPY);
+        if (!isTalking() && voiceCueQueue.isEmpty()
+                && !(greetingStarted && !greetingCompleted)) {
+            triggerAnimation("idle");
+        }
     }
 
     /**
@@ -389,6 +420,12 @@ public class VerityEntity extends PathfinderMob {
      * Expression snaps back immediately when not talking; idle animation waits for settle.
      */
     private void requestDefaultSmile() {
+        // Keep hurt face until its own 10s timer expires.
+        if (hurtFaceResetTicks > 0) {
+            setTalking(false);
+            pendingDefaultSmile = false;
+            return;
+        }
         // Drop talking/listening leftovers immediately so the smiley shows while settling.
         setTalking(false);
         setExpression(VerityExpressionState.HAPPY);
@@ -399,7 +436,7 @@ public class VerityEntity extends PathfinderMob {
     }
 
     private void tryApplyDefaultSmile() {
-        if (!pendingDefaultSmile) {
+        if (!pendingDefaultSmile || hurtFaceResetTicks > 0) {
             return;
         }
         // Wait out the procedural bounce (50 ticks) before locking idle anim.
@@ -413,7 +450,9 @@ public class VerityEntity extends PathfinderMob {
     private void applyDefaultSmile() {
         setTalking(false);
         setExpression(VerityExpressionState.HAPPY);
-        setFaceVariant("auto");
+        if (hurtFaceResetTicks <= 0) {
+            setFaceVariant("auto");
+        }
         triggerAnimation("idle");
     }
 
@@ -686,11 +725,23 @@ public class VerityEntity extends PathfinderMob {
     public boolean hurt(DamageSource source, float amount) {
         if (VerityCommonConfig.PROTECT_VERITY.get()) {
             if (source.getEntity() instanceof Player player && player.getAbilities().instabuild) {
-                return super.hurt(source, amount);
+                boolean damaged = super.hurt(source, amount);
+                if (damaged && !this.level().isClientSide) {
+                    applyHurtFace();
+                }
+                return damaged;
+            }
+            // Protected: still flash hurt face on player hits so he isn't expression-stuck.
+            if (!this.level().isClientSide && source.getEntity() instanceof Player) {
+                applyHurtFace();
             }
             return false;
         }
-        return super.hurt(source, amount);
+        boolean damaged = super.hurt(source, amount);
+        if (damaged && !this.level().isClientSide) {
+            applyHurtFace();
+        }
+        return damaged;
     }
 
     @Override
@@ -782,10 +833,32 @@ public class VerityEntity extends PathfinderMob {
         return ownerUuid;
     }
 
-    /** Enable talking mouth for a fixed tick window (voice-line reactions). */
+    /**
+     * Enable talking face + body stretch for a fixed tick window (voice-line reactions).
+     * Clears any active hurt face so speech shows the talking expression.
+     */
     public void beginTalkingForTicks(int ticks) {
+        if (this.level().isClientSide) {
+            return;
+        }
+        if (hurtFaceResetTicks > 0) {
+            hurtFaceResetTicks = 0;
+            setFaceVariant("auto");
+        }
+        pendingDefaultSmile = false;
+        setExpression(VerityExpressionState.HAPPY);
         setTalking(true);
         this.talkTicksRemaining = Math.max(1, ticks);
+        // Keep greeting anim name while the intro greeting is active.
+        if (!(greetingStarted && !greetingCompleted)) {
+            this.entityData.set(DATA_ANIMATION, "talk");
+            this.entityData.set(DATA_ANIM_TOKEN, this.entityData.get(DATA_ANIM_TOKEN) + 1);
+        }
+    }
+
+    /** Play a single Verity voice line with talking animation for {@code durationTicks}. */
+    public void playVoiceLine(net.minecraft.sounds.SoundEvent sound, int durationTicks) {
+        enqueueVoiceCue(sound, durationTicks, 0);
     }
 
     /**
