@@ -53,6 +53,12 @@ public class VerityEntity extends PathfinderMob {
     public static final float SOURCE_MESH_BLOCKS = 11.0f / 16.0f;
     /** Matches verity-5.7.2 bounce curve length (client). */
     public static final int BOUNCE_DURATION_TICKS = 50;
+    /** Hover above the box opening before gravity drop. */
+    public static final int INTRO_FLOAT_TICKS = 12;
+    /** Brief hurt face after box-open landing (~1 s). Combat hurt stays {@link #HURT_FACE_DURATION_TICKS}. */
+    public static final int INTRO_LAND_HURT_FACE_TICKS = 20;
+    /** Y offset from box feet to Verity spawn (box height 1.0 + slight float above lid). */
+    public static final double INTRO_SPAWN_Y_ABOVE_BOX = 1.08D;
 
     private static final EntityDataAccessor<String> DATA_ANIMATION =
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.STRING);
@@ -115,6 +121,11 @@ public class VerityEntity extends PathfinderMob {
     private double pendingFallBounceY = -1.0;
     /** Brief hurt face after wall/fall bounce, then restore happy idle. */
     private int hurtFaceResetTicks;
+    /** Box-open cinematic — float, fall, bounce, hurt, then quest greeting. */
+    private VerityIntroPhase introPhase = VerityIntroPhase.NONE;
+    private int introPhaseTicks;
+    private boolean introLandHandled;
+    private boolean pendingQuest1Intro;
     /** Server tick when setWasThrown(true) was last applied. */
     private int thrownAtTick = -1000;
     /** When true, Verity pathfinds toward the owning player and rolls while moving. */
@@ -215,15 +226,63 @@ public class VerityEntity extends PathfinderMob {
         this.greetingStarted = false;
         this.greetingCompleted = false;
         this.greetingStageTicks = 0;
-        this.faceTicksRemaining = 12;
+        this.introPhase = VerityIntroPhase.FLOATING;
+        this.introPhaseTicks = 0;
+        this.introLandHandled = false;
+        this.pendingQuest1Intro = true;
+        this.hurtFaceResetTicks = 0;
+        this.pendingDefaultSmile = false;
+        this.faceTicksRemaining = 20;
         this.targetYRot = yawToward(owner);
-        setExpression(VerityExpressionState.GREETING);
+        setExpression(VerityExpressionState.HAPPY);
         com.universeexe.verity.trust.MoodState mood =
                 com.universeexe.verity.trust.VerityTrustManager.getMood(owner);
         setMoodState(mood);
         setFaceVariant("auto");
+        setTalking(false);
+        setWasThrown(false);
+        setNoGravity(true);
         triggerAnimation("reveal");
-        triggerBounce();
+    }
+
+    public boolean isIntroCinematicActive() {
+        return introPhase.isBoxOpenCinematicActive();
+    }
+
+    public VerityIntroPhase getIntroPhase() {
+        return introPhase;
+    }
+
+    /**
+     * Quest 1 voice finished — return to mood-based idle smiley.
+     */
+    public void finishIntroReveal() {
+        if (this.level().isClientSide) {
+            return;
+        }
+        this.introPhase = VerityIntroPhase.DONE;
+        this.pendingQuest1Intro = false;
+        this.greetingStarted = true;
+        this.greetingCompleted = true;
+        this.pendingGreeting = false;
+        setTalking(false);
+        requestDefaultSmile();
+    }
+
+    private void scheduleQuest1IntroAfterReveal() {
+        if (this.level().isClientSide || !pendingQuest1Intro) {
+            return;
+        }
+        ServerPlayer owner = findOwner();
+        if (owner == null) {
+            return;
+        }
+        pendingQuest1Intro = false;
+        introPhase = VerityIntroPhase.GREETING;
+        hurtFaceResetTicks = 0;
+        setFaceVariant("auto");
+        setExpression(VerityExpressionState.HAPPY);
+        com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, this);
     }
 
     public void triggerBounce() {
@@ -257,6 +316,8 @@ public class VerityEntity extends PathfinderMob {
             return;
         }
 
+        tickIntroReveal();
+
         // After bounce settles (with grace), clear WasThrown so look-at / optional stationary resume.
         if (wasThrown
                 && this.onGround()
@@ -268,10 +329,9 @@ public class VerityEntity extends PathfinderMob {
                 wasThrown = false;
             }
         }
-        // Optional stationary lock: server-only, never while thrown or following.
-        // Only damp horizontal motion while on ground — never zero Y or hold midair.
-        // Breaking the block under Verity must let him fall with normal gravity.
-        if (!wasThrown && !followingOwner && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
+        // Optional stationary lock: server-only, never while thrown, following, or box-open intro.
+        if (!wasThrown && !followingOwner && !isIntroCinematicActive()
+                && VerityCommonConfig.KEEP_VERITY_STATIONARY_AFTER_REVEAL.get()) {
             this.getNavigation().stop();
             if (this.onGround()) {
                 Vec3 m = this.getDeltaMovement();
@@ -296,10 +356,13 @@ public class VerityEntity extends PathfinderMob {
                 newZ = -motionBeforeCollision.z * 0.6;
                 bounced = true;
             }
-            if (bounced) {
+            if (bounced && !isIntroCinematicActive()) {
                 this.setDeltaMovement(newX, this.getDeltaMovement().y, newZ);
                 this.hasImpulse = true;
                 applyBounceHurtFace();
+            } else if (bounced) {
+                this.setDeltaMovement(newX, this.getDeltaMovement().y, newZ);
+                this.hasImpulse = true;
             }
         }
 
@@ -316,16 +379,18 @@ public class VerityEntity extends PathfinderMob {
                 this.setDeltaMovement(this.getDeltaMovement().x, pendingFallBounceY, this.getDeltaMovement().z);
                 this.hasImpulse = true;
                 this.setOnGround(false);
-                applyBounceHurtFace();
+                if (!isIntroCinematicActive()) {
+                    applyBounceHurtFace();
+                }
                 pendingFallBounceY = -1.0;
             }
         }
         if (hurtFaceResetTicks > 0) {
             hurtFaceResetTicks--;
-            if (hurtFaceResetTicks == 0) {
+            if (hurtFaceResetTicks == 0 && introPhase != VerityIntroPhase.HURT_FACE) {
                 clearHurtFaceToHappy();
             }
-        } else if ("hurt".equalsIgnoreCase(getFaceVariant())) {
+        } else if ("hurt".equalsIgnoreCase(getFaceVariant()) && introPhase != VerityIntroPhase.HURT_FACE) {
             // Recover stuck hurt face (e.g. saved NBT without timer).
             clearHurtFaceToHappy();
         }
@@ -372,19 +437,89 @@ public class VerityEntity extends PathfinderMob {
         }
 
         if (pendingGreeting || (greetingStarted && !greetingCompleted)) {
-            greetingStageTicks++;
-            if (!greetingStarted && greetingStageTicks >= 0) {
-                startGreeting(owner);
-            } else if (greetingStarted && !greetingCompleted && greetingStageTicks >= GREETING_DURATION_TICKS) {
-                greetingCompleted = true;
-                pendingGreeting = false;
-                setTalking(false);
-                requestDefaultSmile();
-                if (owner != null) {
-                    VerityPlayerData.setGreetingCompleted(owner, true);
+            if (introPhase == VerityIntroPhase.NONE || introPhase == VerityIntroPhase.DONE) {
+                greetingStageTicks++;
+                if (!greetingStarted && greetingStageTicks >= 0) {
+                    startGreeting(owner);
+                } else if (greetingStarted && !greetingCompleted && greetingStageTicks >= GREETING_DURATION_TICKS) {
+                    greetingCompleted = true;
+                    pendingGreeting = false;
+                    setTalking(false);
+                    requestDefaultSmile();
+                    if (owner != null) {
+                        VerityPlayerData.setGreetingCompleted(owner, true);
+                    }
                 }
             }
         }
+    }
+
+    private void tickIntroReveal() {
+        if (introPhase == VerityIntroPhase.NONE || introPhase == VerityIntroPhase.DONE) {
+            return;
+        }
+        introPhaseTicks++;
+
+        switch (introPhase) {
+            case FLOATING -> {
+                if (introPhaseTicks >= INTRO_FLOAT_TICKS) {
+                    setNoGravity(false);
+                    introPhase = VerityIntroPhase.FALLING;
+                    introPhaseTicks = 0;
+                }
+            }
+            case FALLING -> {
+                if (!introLandHandled && this.onGround()) {
+                    Vec3 motion = this.getDeltaMovement();
+                    if (motion.y <= 0.08D) {
+                        float fall = Math.max(this.fallDistance, 0.85f);
+                        causeFallDamage(fall, 1.0f, this.damageSources().fall());
+                        introLandHandled = true;
+                        introPhase = VerityIntroPhase.BOUNCING;
+                        introPhaseTicks = 0;
+                        triggerBounce();
+                    }
+                }
+            }
+            case BOUNCING -> {
+                boolean settled = this.onGround() && pendingFallBounceTicks <= 0;
+                if (settled) {
+                    Vec3 motion = this.getDeltaMovement();
+                    settled = motion.horizontalDistanceSqr() < 1.0E-4 && Math.abs(motion.y) < 0.06D;
+                }
+                if (settled || introPhaseTicks > 40) {
+                    applyIntroLandHurtFace();
+                    introPhase = VerityIntroPhase.HURT_FACE;
+                    introPhaseTicks = 0;
+                }
+            }
+            case HURT_FACE -> {
+                if (introPhaseTicks >= INTRO_LAND_HURT_FACE_TICKS) {
+                    scheduleQuest1IntroAfterReveal();
+                }
+            }
+            case GREETING -> {
+                // Quest voice + idle handled by VerityQuestManager / finishIntroReveal.
+            }
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * Brief hurt face after box-open landing (~1 s). Combat / throw hurt keeps {@link #HURT_FACE_DURATION_TICKS}.
+     */
+    public void applyIntroLandHurtFace() {
+        if (this.level().isClientSide) {
+            return;
+        }
+        pendingDefaultSmile = false;
+        setTalking(false);
+        talkTicksRemaining = 0;
+        setFaceVariant("hurt");
+        setExpression(VerityExpressionState.HAPPY);
+        hurtFaceResetTicks = INTRO_LAND_HURT_FACE_TICKS;
+        this.playSound(SoundEvents.SLIME_SQUISH_SMALL, 0.85f, 1.05f);
     }
 
     private void applyBounceHurtFace() {
@@ -818,6 +953,10 @@ public class VerityEntity extends PathfinderMob {
         tag.putString("CurrentExpression", this.entityData.get(DATA_EXPRESSION));
         tag.putString("FaceVariant", this.entityData.get(DATA_FACE_VARIANT));
         tag.putInt("HurtFaceResetTicks", hurtFaceResetTicks);
+        tag.putString("IntroPhase", introPhase.name());
+        tag.putInt("IntroPhaseTicks", introPhaseTicks);
+        tag.putBoolean("IntroLandHandled", introLandHandled);
+        tag.putBoolean("PendingQuest1Intro", pendingQuest1Intro);
         tag.putBoolean("WasThrown", isWasThrown());
         tag.putBoolean("FollowingOwner", followingOwner);
         tag.putBoolean("InvulnerableStoryEntity", true);
@@ -853,7 +992,17 @@ public class VerityEntity extends PathfinderMob {
             // Older saves could store hurt with no timer — expire after ~10s from load.
             hurtFaceResetTicks = HURT_FACE_DURATION_TICKS;
         }
-        if (hurtFaceResetTicks <= 0 && "hurt".equalsIgnoreCase(this.entityData.get(DATA_FACE_VARIANT))) {
+        introPhase = VerityIntroPhase.fromName(tag.getString("IntroPhase"));
+        introPhaseTicks = tag.getInt("IntroPhaseTicks");
+        introLandHandled = tag.getBoolean("IntroLandHandled");
+        pendingQuest1Intro = tag.getBoolean("PendingQuest1Intro");
+        if (introPhase == VerityIntroPhase.FLOATING) {
+            setNoGravity(true);
+        } else if (introPhase == VerityIntroPhase.NONE || introPhase == VerityIntroPhase.DONE) {
+            setNoGravity(false);
+        }
+        if (hurtFaceResetTicks <= 0 && "hurt".equalsIgnoreCase(this.entityData.get(DATA_FACE_VARIANT))
+                && introPhase != VerityIntroPhase.HURT_FACE) {
             clearHurtFaceToHappy();
         }
         if (tag.contains("WasThrown")) {

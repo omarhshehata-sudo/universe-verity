@@ -136,6 +136,9 @@ public final class VerityQuestManager {
         VerityTrustManager.completeQuestTrust(player, verity, VerityQuestIds.MEET_VERITY);
         player.giveExperiencePoints(Q1_XP);
         VerityFtbQuestBridge.completeQuest(player, VerityQuestIds.MEET_VERITY);
+        if (verity != null) {
+            verity.finishIntroReveal();
+        }
         VerityDebug.log("Quest 1 complete for {}", player.getGameProfile().getName());
     }
 

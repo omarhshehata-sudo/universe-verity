@@ -254,11 +254,11 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         if (verity == null) {
             return false;
         }
-        verity.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0);
+        verity.moveTo(this.getX(), this.getY() + VerityEntity.INTRO_SPAWN_Y_ABOVE_BOX, this.getZ(),
+                this.getYRot(), 0);
         verity.setOwnerUUID(this.ownerUuid);
         verity.setYBodyRot(this.getYRot());
         verity.setYHeadRot(this.getYRot());
-        verity.triggerAnimation("reveal");
         if (!serverLevel.addFreshEntity(verity)) {
             return false;
         }
@@ -266,21 +266,8 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         VerityPlayerData.setGreetingPlayed(owner, false);
         VerityPlayerData.setGreetingCompleted(owner, false);
         verity.beginPostReveal(owner);
-        scheduleQuest1Intro(owner, verity);
         VerityDebug.log("Spawned Verity {} for {}", verity.getUUID(), owner.getGameProfile().getName());
         return true;
-    }
-
-    private static void scheduleQuest1Intro(ServerPlayer owner, VerityEntity verity) {
-        int delay = com.universeexe.verity.config.VerityCommonConfig.GREETING_DELAY_TICKS.get();
-        if (delay <= 0) {
-            com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, verity);
-            return;
-        }
-        owner.getServer().tell(new net.minecraft.server.TickTask(
-                owner.getServer().getTickCount() + delay,
-                () -> com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, verity)
-        ));
     }
 
     public boolean beginReveal(ServerPlayer player) {
@@ -506,6 +493,10 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
 
     @Override
     public boolean canBeCollidedWith() {
+        // Let Verity fall beside the box without clipping through solid box geometry.
+        if (revealStage.isRevealActive()) {
+            return false;
+        }
         return true;
     }
 
