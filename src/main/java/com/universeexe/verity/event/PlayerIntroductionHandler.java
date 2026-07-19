@@ -7,6 +7,7 @@ import com.universeexe.verity.entity.VerityEntity;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.util.SafeBoxPlacement;
 import com.universeexe.verity.util.VerityDebug;
+import com.universeexe.verity.quest.VerityFtbQuestBridge;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -31,6 +32,7 @@ public class PlayerIntroductionHandler {
         }
         considerScheduling(player);
         reconnectExisting(player);
+        VerityFtbQuestBridge.reconcileAll(player);
     }
 
     @SubscribeEvent

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "universe_verity:item/verity_box_quest_icon"
+  }
+}

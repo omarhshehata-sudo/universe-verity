@@ -2,12 +2,35 @@
 	id: "verity_chapter"
 	order_index: 0
 	filename: "verity"
-	title: "Verity"
+	title: "VERITY"
+	subtitle: [
+		"A small voice followed you into this world."
+		""
+		"It seems friendly."
+		""
+		"It already knows you are here."
+	]
 	icon: {
-		id: "minecraft:chest"
+		id: "universe_verity:verity_box_quest_icon"
 	}
 	default_quest_shape: ""
 	default_hide_dependency_lines: false
+	images: [
+		{
+			x: -16.0d
+			y: -9.0d
+			width: 32.0d
+			height: 18.0d
+			rotation: 0.0d
+			image: "universe_verity:textures/gui/quests/verity_chapter_background.png"
+			color: 0
+			alpha: 180
+			order: -1
+			hover: [""]
+			click: [""]
+			dev: false
+		}
+	]
 	quests: [
 		{
 			id: "verity_meet_verity"
@@ -18,11 +41,26 @@
 			title: "MEET VERITY!"
 			subtitle: "Something arrived with you."
 			icon: {
-				id: "minecraft:chest"
+				id: "universe_verity:verity_box_quest_icon"
 			}
+			description: [
+				"Something arrived before you did."
+				""
+				"A sealed box now rests nearby, even though nothing was there moments ago. It shifts whenever you move, and a muffled voice follows the sound of your footsteps from inside."
+				""
+				"Whatever is trapped in there already knows you are close."
+				""
+				"Open the box."
+				"{@pagebreak}"
+				"The creature calls himself Verity."
+				""
+				"He claims to be your personal helper and says he knows almost everything. He also seems unusually happy that you were the one who opened the box."
+				""
+				"For now, he appears harmless."
+			]
 			tasks: [
 				{
-					id: "verity_meet_verity_task"
+					id: "open_verity_box"
 					type: "custom"
 					title: "Open your sealed box and meet Verity"
 				}
@@ -45,11 +83,24 @@
 			subtitle: "He is waiting for your voice."
 			dependencies: ["verity_meet_verity"]
 			icon: {
-				id: "minecraft:echo_shard"
+				id: "universe_verity:verity_voice_quest_icon"
 			}
+			description: [
+				"Verity has not looked away since leaving the box."
+				""
+				"He introduced himself without asking who you were, and he speaks as though the two of you were always supposed to meet. Now he waits in silence, watching for something only you can provide."
+				""
+				"Stand close, hold your push-to-talk key, and greet him."
+				"{@pagebreak}"
+				"Verity can hear you clearly."
+				""
+				"He understood your greeting, recognized that you were speaking to him, and responded as though he had been waiting for your voice specifically."
+				""
+				"More strangely, he claims he already knew what you sounded like."
+			]
 			tasks: [
 				{
-					id: "verity_say_hello_task"
+					id: "say_hello_to_verity"
 					type: "custom"
 					title: "Say hello to Verity (voice intent)"
 				}
@@ -65,29 +116,29 @@
 		{
 			id: "verity_make_a_sound"
 			x: 8.0d
-			y: 0.0d
-			shape: "circle"
+			y: 1.0d
+			shape: "rsquare"
 			size: 1.5d
 			title: "MAKE A SOUND"
 			subtitle: "A demonstration of incredible power."
 			dependencies: ["verity_say_hello"]
 			icon: {
-				id: "minecraft:note_block"
+				id: "universe_verity:verity_sound_quest_icon"
 			}
 			description: [
 				"Verity claims he can do almost anything."
 				""
-				"So far, he has mostly talked about what he knows. Perhaps it is time for a more practical demonstration."
+				"So far, most of his talents have involved talking about how capable he is. Perhaps it is time for a more practical demonstration."
 				""
-				"Stand near Verity, hold push-to-talk, and ask him to make a sound."
+				"Stand close, hold your push-to-talk key, and ask Verity to make a sound."
 				"{@pagebreak}"
-				"Verity successfully produced a sound."
+				"Verity has successfully demonstrated one of his many talents."
 				""
-				"He appears extremely proud of this achievement and now considers sound-making a repeatable experiment."
+				"The result was technically a sound. He is extremely proud of it and now appears to consider sound-making a repeatable scientific experiment."
 			]
 			tasks: [
 				{
-					id: "verity_make_a_sound_task"
+					id: "make_sound_with_verity"
 					type: "custom"
 					title: "Ask Verity to make a sound."
 				}

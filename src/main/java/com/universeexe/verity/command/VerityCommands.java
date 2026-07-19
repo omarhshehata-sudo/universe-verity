@@ -11,6 +11,11 @@ import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.entity.VerityBoxEntity;
 import com.universeexe.verity.entity.VerityEntity;
 import com.universeexe.verity.entity.VerityRevealStage;
+import com.universeexe.verity.quest.VerityBookAudit;
+import com.universeexe.verity.quest.VerityFtbQuestBridge;
+import com.universeexe.verity.quest.VerityQuestManager;
+import com.universeexe.verity.quest.VerityQuestSpeechSimulator;
+import com.universeexe.verity.quest.VerityVoiceAudit;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.trust.TrustReason;
@@ -101,6 +106,14 @@ public final class VerityCommands {
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(ctx -> skipIntro(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"))))))
                 .then(Commands.literal("box")
+                        .then(Commands.literal("spawn").requires(s -> s.hasPermission(2))
+                                .executes(ctx -> spawnIntro(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("remove").requires(s -> s.hasPermission(2))
+                                .executes(ctx -> removeBox(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("status")
+                                .executes(ctx -> boxStatus(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(ctx -> status(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
                         .then(Commands.literal("locate")
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(ctx -> locateBox(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
@@ -224,7 +237,60 @@ public final class VerityCommands {
                                                 ctx.getSource().getPlayerOrException(),
                                                 StringArgumentType.getString(ctx, "conversation_id")))))
                         .then(Commands.literal("manifest")
-                                .executes(ctx -> voiceManifest(ctx.getSource()))))
+                                .executes(ctx -> voiceManifest(ctx.getSource())))
+                        .then(Commands.literal("audit")
+                                .executes(ctx -> {
+                                    VerityVoiceAudit.sendReport(ctx.getSource().getPlayerOrException());
+                                    return 1;
+                                }))
+                        .then(Commands.literal("replay")
+                                .then(Commands.literal("quest1_box")
+                                        .executes(ctx -> voiceReplayQuest1Box(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("quest1_intro")
+                                        .executes(ctx -> voiceReplayQuest1Intro(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("quest2_first")
+                                        .executes(ctx -> voiceReplayQuest2First(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("quest3_first")
+                                        .executes(ctx -> voiceReplayQuest3First(ctx.getSource(), ctx.getSource().getPlayerOrException())))))
+                .then(Commands.literal("quest").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("status")
+                                .executes(ctx -> questStatus(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("audit")
+                                .executes(ctx -> questAudit(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("reset")
+                                .then(Commands.literal("all")
+                                        .executes(ctx -> questResetAll(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("1")
+                                        .executes(ctx -> questReset(ctx.getSource(), ctx.getSource().getPlayerOrException(), 1)))
+                                .then(Commands.literal("2")
+                                        .executes(ctx -> questReset(ctx.getSource(), ctx.getSource().getPlayerOrException(), 2)))
+                                .then(Commands.literal("3")
+                                        .executes(ctx -> questReset(ctx.getSource(), ctx.getSource().getPlayerOrException(), 3))))
+                        .then(Commands.literal("complete")
+                                .then(Commands.literal("1")
+                                        .executes(ctx -> questForceComplete(ctx.getSource(), ctx.getSource().getPlayerOrException(), 1)))
+                                .then(Commands.literal("2")
+                                        .executes(ctx -> questForceComplete(ctx.getSource(), ctx.getSource().getPlayerOrException(), 2)))
+                                .then(Commands.literal("3")
+                                        .executes(ctx -> questForceComplete(ctx.getSource(), ctx.getSource().getPlayerOrException(), 3)))))
+                .then(Commands.literal("speech").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("simulate")
+                                .then(Commands.argument("text", StringArgumentType.greedyString())
+                                        .executes(ctx -> speechSimulate(ctx.getSource(),
+                                                ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "text"))))))
+                .then(Commands.literal("book").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("sync")
+                                .executes(ctx -> {
+                                    VerityBookAudit.syncProgress(ctx.getSource().getPlayerOrException());
+                                    ctx.getSource().sendSuccess(() -> Component.literal("[Verity] FTB book sync requested."), true);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("audit")
+                                .executes(ctx -> {
+                                    VerityBookAudit.sendReport(ctx.getSource().getPlayerOrException());
+                                    return 1;
+                                })))
                 .then(Commands.literal("trust").requires(s -> s.hasPermission(2))
                         .then(Commands.literal("get")
                                 .executes(ctx -> trustGet(ctx.getSource(), ctx.getSource().getPlayerOrException()))
@@ -1020,6 +1086,120 @@ public final class VerityCommands {
                 source.sendSuccess(() -> Component.literal("  pool: " + id), false));
         VerityVoiceManifest.get().conversations().keySet().stream().sorted().forEach(id ->
                 source.sendSuccess(() -> Component.literal("  conversation: " + id), false));
+        return 1;
+    }
+
+    private static int questStatus(CommandSourceStack source, ServerPlayer player) {
+        VerityBookAudit.playerStatus(player).forEach(line ->
+                source.sendSuccess(() -> Component.literal(line), false));
+        return 1;
+    }
+
+    private static int questAudit(CommandSourceStack source, ServerPlayer player) {
+        VerityBookAudit.sendReport(player);
+        VerityVoiceAudit.sendReport(player);
+        return 1;
+    }
+
+    private static int questResetAll(CommandSourceStack source, ServerPlayer player) {
+        VerityPlayerData.resetIntroduction(player);
+        source.sendSuccess(() -> Component.literal("[Verity] Quest flags reset (intro/box/verity cleared)."), true);
+        return 1;
+    }
+
+    private static int questReset(CommandSourceStack source, ServerPlayer player, int quest) {
+        var tag = VerityPlayerData.get(player);
+        switch (quest) {
+            case 1 -> {
+                tag.putBoolean(com.universeexe.verity.data.VerityIntroDataKeys.Q1_QUEST_COMPLETE, false);
+                tag.putBoolean(com.universeexe.verity.data.VerityIntroDataKeys.VERITY_REVEALED, false);
+            }
+            case 2 -> {
+                tag.putBoolean(com.universeexe.verity.data.VerityIntroDataKeys.Q2_QUEST_COMPLETE, false);
+                tag.putBoolean(com.universeexe.verity.data.VerityIntroDataKeys.VERITY_GREETED, false);
+            }
+            case 3 -> tag.putBoolean(com.universeexe.verity.data.VerityIntroDataKeys.Q3_QUEST_COMPLETE, false);
+            default -> {
+                source.sendFailure(Component.literal("Quest must be 1, 2, or 3"));
+                return 0;
+            }
+        }
+        source.sendSuccess(() -> Component.literal("[Verity] DEV reset quest " + quest + " flags."), true);
+        return 1;
+    }
+
+    private static int questForceComplete(CommandSourceStack source, ServerPlayer player, int quest) {
+        Optional<VerityEntity> verity = findVerity(player);
+        if (verity.isEmpty()) {
+            source.sendFailure(Component.literal("No owned Verity nearby for forced quest completion."));
+            return 0;
+        }
+        switch (quest) {
+            case 1 -> VerityQuestManager.completeQuest1(player, verity.get());
+            case 2 -> VerityQuestManager.completeQuest2(player, verity.get());
+            case 3 -> VerityQuestManager.completeQuest3(player, verity.get());
+            default -> {
+                source.sendFailure(Component.literal("Quest must be 1, 2, or 3"));
+                return 0;
+            }
+        }
+        source.sendSuccess(() -> Component.literal("[Verity] DEV forced complete quest " + quest), true);
+        return 1;
+    }
+
+    private static int speechSimulate(CommandSourceStack source, ServerPlayer player, String text) {
+        boolean ok = VerityQuestSpeechSimulator.simulate(player, text);
+        source.sendSuccess(() -> Component.literal(ok
+                ? "[Verity] speech simulate handled: \"" + text + "\""
+                : "[Verity] speech simulate rejected (no owned Verity or phrase not matched): \"" + text + "\""), true);
+        return ok ? 1 : 0;
+    }
+
+    private static int boxStatus(CommandSourceStack source, ServerPlayer player) {
+        return status(source, player);
+    }
+
+    private static int voiceReplayQuest1Box(CommandSourceStack source, ServerPlayer player) {
+        Optional<VerityBoxEntity> box = findBox(player);
+        if (box.isEmpty()) {
+            source.sendFailure(Component.literal("No owned box to replay waiting dialogue."));
+            return 0;
+        }
+        box.get().replayIntro();
+        source.sendSuccess(() -> Component.literal("Replayed Quest 1 box waiting dialogue."), true);
+        return 1;
+    }
+
+    private static int voiceReplayQuest1Intro(CommandSourceStack source, ServerPlayer player) {
+        Optional<VerityEntity> verity = findVerity(player);
+        if (verity.isEmpty()) {
+            source.sendFailure(Component.literal("No owned Verity for Quest 1 intro replay."));
+            return 0;
+        }
+        VerityQuestManager.beginQuest1Intro(player, verity.get());
+        source.sendSuccess(() -> Component.literal("Replayed Quest 1 intro sequence."), true);
+        return 1;
+    }
+
+    private static int voiceReplayQuest2First(CommandSourceStack source, ServerPlayer player) {
+        Optional<VerityEntity> verity = findVerity(player);
+        if (verity.isEmpty()) {
+            source.sendFailure(Component.literal("No owned Verity for Quest 2 replay."));
+            return 0;
+        }
+        VerityVoiceDirector.requestConversation(player, "quest_02_first_greeting", voiceContextFor(player));
+        source.sendSuccess(() -> Component.literal("Queued Quest 2 first greeting conversation."), true);
+        return 1;
+    }
+
+    private static int voiceReplayQuest3First(CommandSourceStack source, ServerPlayer player) {
+        Optional<VerityEntity> verity = findVerity(player);
+        if (verity.isEmpty()) {
+            source.sendFailure(Component.literal("No owned Verity for Quest 3 replay."));
+            return 0;
+        }
+        VerityQuestManager.playFirstMakeSound(player, verity.get());
+        source.sendSuccess(() -> Component.literal("Started Quest 3 first make-sound flow."), true);
         return 1;
     }
 }
