@@ -62,10 +62,10 @@ Legacy IDs (`verity.box.*`, `verity.voice.*`) unchanged for companion/follow pat
 ## Q1 flow
 
 1. Owner right-clicks sealed box (blocks re-interaction while revealing).
-2. `VerityBoxSequence.stopWaitingDialogue` interrupts box intro voice.
+2. `VerityBoxSequence.stopWaitingDialogue` clears box intro voice queue and interrupts playback.
 3. Reveal cinematic (~1s settle via `greetingDelayTicks`, then shake/open/spawn).
-4. `VerityQuestManager.beginQuest1Intro` plays reveal + intro via Voice Director (owner-only).
-5. On event complete: flags, trust, XP, advancement, FTB command bridge.
+4. `VerityQuestManager.beginQuest1Intro` plays reveal + personal-helper greeting via Voice Director (owner-only).
+5. On event complete: flags, trust, XP, FTB Quests custom task completion (no advancement tab UX).
 
 ## Q2 flow
 
@@ -75,10 +75,11 @@ Legacy IDs (`verity.box.*`, `verity.voice.*`) unchanged for companion/follow pat
 4. Knowledge phrases in window → `quest_02_knowledge_followup`.
 5. Later hellos → weighted `quest_02_repeat_greeting` pool (5s min gap, happier 1/day).
 
-## FTB Quests
+## FTB Quests (player-facing quest book)
 
-- Chapter template: `ftb_quests/chapter_verity.snbt` (copy into modpack `config/ftbquests/quests/chapters/`).
+- Chapter template: `ftb_quests/chapter_verity.snbt` — copy into modpack `config/ftbquests/quests/chapters/`.
 - Runtime completion: `VerityFtbQuestBridge` runs `ftbquests change_progress <player> complete <quest_id>` when FTB Quests is loaded.
+- Vanilla advancements under `data/universe_verity/advancements/quests/` remain for pack tooling only; they are **not** granted on quest complete.
 
 ## Placeholder art
 

@@ -91,6 +91,7 @@ public final class VerityBoxSequence {
         box.setWaitingDialogueStopped(true);
         box.setVoiceBusyTicks(0);
         if (owner != null) {
+            VerityVoiceDirector.clearQueue(owner, true);
             VerityVoiceDirector.interrupt(owner, VerityVoiceCategory.QUEST);
             VerityVoiceDirector.interrupt(owner, VerityVoiceCategory.BOX_INTRO);
         }

@@ -17,8 +17,6 @@ import com.universeexe.verity.voice.VerityVoiceMemory;
 import com.universeexe.verity.voice.VerityVoicePool;
 import com.universeexe.verity.voice.VerityVoiceSnapshot;
 import com.universeexe.verity.voice.VerityVoiceVariant;
-import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 
@@ -35,6 +33,8 @@ public final class VerityQuestManager {
     public static final int Q3_XP = 40;
     public static final int Q2_FOLLOWUP_WINDOW_TICKS = 240;
     public static final int Q2_REPEAT_MIN_GAP_TICKS = 100;
+    /** Matches {@code greeting_personal_helper.ogg} (~5.87 s). */
+    private static final int GREETING_MONOLOGUE_TICKS = 118;
 
     private VerityQuestManager() {
     }
@@ -55,15 +55,16 @@ public final class VerityQuestManager {
         if (player.level().isClientSide || isQuest1Complete(player)) {
             return;
         }
-        VerityVoiceContext ctx = voiceContext(player, verity, true);
+        VerityVoiceDirector.clearQueue(player, true);
+        verity.prepareForQuestGreeting();
+        VerityVoiceContext ctx = voiceContext(player, verity, true)
+                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80));
         var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
-        addInline(resolved, "verity.q01.reveal.oh", 18, "subtitles.universe_verity.q01.reveal.oh", 12);
+        addInline(resolved, "verity.q01.reveal.oh", 20, "subtitles.universe_verity.q01.reveal.oh", 12);
         addInline(resolved, "verity.q01.reveal.found_opening", VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING,
                 "subtitles.universe_verity.q01.reveal.found_opening", VerityCommonConfig.OPEN_FOUND_PAUSE_TICKS.get());
-        addInline(resolved, "verity.q01.intro.hello", 26, "subtitles.universe_verity.q01.intro.hello", 8);
-        addInline(resolved, "verity.q01.intro.name", 34, "subtitles.universe_verity.q01.intro.name", 8);
-        addInline(resolved, "verity.q01.intro.helper_friend", 40, "subtitles.universe_verity.q01.intro.helper_friend", 8);
-        addInline(resolved, "verity.q01.intro.ask_anything", 28, "subtitles.universe_verity.q01.intro.ask_anything", 10);
+        addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS,
+                "subtitles.universe_verity.verity.greeting_personal_helper", 8);
         resolved.add(new VerityQueuedVoiceEvent.ResolvedStep(pickQuest1Ending(player, verity), 0));
 
         VerityQueuedVoiceEvent event = VerityQueuedVoiceEvent.fromConversation(
@@ -90,7 +91,6 @@ public final class VerityQuestManager {
         VerityTrustEvents.onOpenedBox(player, verity);
         VerityTrustManager.completeQuestTrust(player, verity, VerityQuestIds.MEET_VERITY);
         player.giveExperiencePoints(Q1_XP);
-        grantAdvancement(player, VerityQuestIds.MEET_VERITY);
         VerityFtbQuestBridge.completeQuest(player, VerityQuestIds.MEET_VERITY);
         VerityDebug.log("Quest 1 complete for {}", player.getGameProfile().getName());
     }
@@ -135,7 +135,6 @@ public final class VerityQuestManager {
         VerityTrustEvents.onFirstGreeting(player, verity);
         VerityTrustManager.completeQuestTrust(player, verity, VerityQuestIds.SAY_HELLO);
         player.giveExperiencePoints(Q2_XP);
-        grantAdvancement(player, VerityQuestIds.SAY_HELLO);
         VerityFtbQuestBridge.completeQuest(player, VerityQuestIds.SAY_HELLO);
         VerityDebug.log("Quest 2 complete for {}", player.getGameProfile().getName());
     }
@@ -156,7 +155,6 @@ public final class VerityQuestManager {
         VerityPlayerData.setQuest3Complete(player, true);
         VerityTrustManager.completeQuestTrust(player, verity, VerityQuestIds.MAKE_A_SOUND);
         player.giveExperiencePoints(Q3_XP);
-        grantAdvancement(player, VerityQuestIds.MAKE_A_SOUND);
         VerityFtbQuestBridge.completeQuest(player, VerityQuestIds.MAKE_A_SOUND);
         VerityDebug.log("Quest 3 complete for {}", player.getGameProfile().getName());
         VerityQuest3Handler.clearSession(player);
@@ -164,10 +162,6 @@ public final class VerityQuestManager {
 
     public static boolean tryHandleQ3ResponsePhrase(ServerPlayer player, VerityEntity verity, String phrase) {
         return VerityQuest3Handler.tryHandleResponsePhrase(player, verity, phrase);
-    }
-
-    static void grantAdvancementPublic(ServerPlayer player, String questId) {
-        grantAdvancement(player, questId);
     }
 
     private static void playKnowledgeFollowup(ServerPlayer player, VerityEntity verity) {
@@ -256,20 +250,5 @@ public final class VerityQuestManager {
                 SoundSource.NEUTRAL,
                 ownerOnly
         );
-    }
-
-    private static void grantAdvancement(ServerPlayer player, String questId) {
-        ResourceLocation id = new ResourceLocation("universe_verity", "quests/" + questId);
-        var advancements = player.server.getAdvancements();
-        var adv = advancements.getAdvancement(id);
-        if (adv == null) {
-            return;
-        }
-        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(adv);
-        if (!progress.isDone()) {
-            for (String criterion : progress.getRemainingCriteria()) {
-                player.getAdvancements().award(adv, criterion);
-            }
-        }
     }
 }

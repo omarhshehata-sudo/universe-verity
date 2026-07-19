@@ -8,7 +8,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * Maps expression / talk state to verity-5.7.2 face PNG paths under {@code textures/entity/}.
+ * Maps expression / talk / trust mood to verity-5.7.3 sphere face PNGs under {@code textures/entity/}.
  */
 @OnlyIn(Dist.CLIENT)
 public final class VerityFaceTextures {
@@ -16,17 +16,31 @@ public final class VerityFaceTextures {
     }
 
     public static ResourceLocation forEntity(VerityEntity entity) {
-        // Trust mood faces take priority over transient expression variants (except hurt/talking).
         String faceVariant = entity.getFaceVariant();
         if (faceVariant != null && "hurt".equalsIgnoreCase(faceVariant)) {
-            return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/hurt.png");
+            return forVariant("hurt");
         }
+        String resolved = resolveVariant(entity.getRenderExpression(), faceVariant, entity.getMoodState().legacyFaceVariant());
         if (entity.isVisuallyTalking()) {
-            String base = baseVariant(entity.getRenderExpression(), faceVariant);
-            return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/" + talkingVariant(base) + ".png");
+            resolved = talkingVariant(resolved);
         }
-        String moodFace = entity.getMoodState().faceTextureName();
-        return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/verity/" + moodFace + ".png");
+        return forVariant(resolved);
+    }
+
+    /** Picks the idle face variant from expression override, explicit variant, or trust mood fallback. */
+    public static String resolveVariant(VerityExpressionState expression, String overrideVariant, String moodFallback) {
+        if (overrideVariant != null && !overrideVariant.isBlank()
+                && !"auto".equalsIgnoreCase(overrideVariant)) {
+            return sanitize(overrideVariant);
+        }
+        String fromExpression = baseVariant(expression, null);
+        if (!"neutral".equals(fromExpression) || expression != VerityExpressionState.HAPPY) {
+            return fromExpression;
+        }
+        if (moodFallback != null && !moodFallback.isBlank()) {
+            return sanitize(moodFallback);
+        }
+        return fromExpression;
     }
 
     public static ResourceLocation forVariant(String variant) {
