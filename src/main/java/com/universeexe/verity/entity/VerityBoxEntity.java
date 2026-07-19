@@ -65,6 +65,7 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
     private String clientPlayingAnim = "idle";
     private boolean revealReactPlayed;
     private boolean revealOpenPlayed;
+    private boolean waitingDialogueStopped;
     /** Server-side lock so one-shots finish before the next trigger (stops mid-shake restarts). */
     private int animLockTicks;
     /** Prevents SFX spam overlapping a still-playing movement clip. */
@@ -265,8 +266,21 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         VerityPlayerData.setGreetingPlayed(owner, false);
         VerityPlayerData.setGreetingCompleted(owner, false);
         verity.beginPostReveal(owner);
+        scheduleQuest1Intro(owner, verity);
         VerityDebug.log("Spawned Verity {} for {}", verity.getUUID(), owner.getGameProfile().getName());
         return true;
+    }
+
+    private static void scheduleQuest1Intro(ServerPlayer owner, VerityEntity verity) {
+        int delay = com.universeexe.verity.config.VerityCommonConfig.GREETING_DELAY_TICKS.get();
+        if (delay <= 0) {
+            com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, verity);
+            return;
+        }
+        owner.getServer().tell(new net.minecraft.server.TickTask(
+                owner.getServer().getTickCount() + delay,
+                () -> com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, verity)
+        ));
     }
 
     public boolean beginReveal(ServerPlayer player) {
@@ -291,6 +305,8 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         }
 
         VerityPlayerData.setRevealStarted(player, true);
+        VerityBoxSequence.stopWaitingDialogue(this, player);
+        introCompleted = true;
         voiceBusyTicks = 0;
         knockFollowupTicks = 0;
         sfxCooldownTicks = 0;
@@ -663,6 +679,18 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
 
     public int getRevealTicks() {
         return revealTicks;
+    }
+
+    public int nextBoxRandomInt(int bound) {
+        return this.random.nextInt(bound);
+    }
+
+    public boolean isWaitingDialogueStopped() {
+        return waitingDialogueStopped;
+    }
+
+    public void setWaitingDialogueStopped(boolean waitingDialogueStopped) {
+        this.waitingDialogueStopped = waitingDialogueStopped;
     }
 
     public void setLastVoiceLine(String id) {

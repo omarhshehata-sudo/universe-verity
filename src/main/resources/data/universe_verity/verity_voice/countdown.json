@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "countdown_warning_01": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "warning_01",
+          "sound": "verity.countdown.warning_01",
+          "duration_ticks": 50,
+          "subtitle": "message.universe_verity.countdown.warning_01"
+        }
+      ]
+    },
+    "countdown_warning_02": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "warning_02",
+          "sound": "verity.countdown.warning_02",
+          "duration_ticks": 40,
+          "subtitle": "message.universe_verity.countdown.warning_02"
+        }
+      ]
+    },
+    "countdown_warning_03": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "warning_03",
+          "sound": "verity.countdown.warning_03",
+          "duration_ticks": 45,
+          "subtitle": "message.universe_verity.countdown.warning_03"
+        }
+      ]
+    },
+    "countdown_two_days": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "two_days",
+          "sound": "verity.countdown.two_days",
+          "duration_ticks": 30,
+          "subtitle": "message.universe_verity.countdown.two_days"
+        }
+      ]
+    },
+    "countdown_one_day": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "one_day",
+          "sound": "verity.countdown.one_day",
+          "duration_ticks": 30,
+          "subtitle": "message.universe_verity.countdown.one_day"
+        }
+      ]
+    },
+    "countdown_arrival": {
+      "category": "COUNTDOWN",
+      "variants": [
+        {
+          "id": "arrival",
+          "sound": "verity.countdown.arrival",
+          "duration_ticks": 35,
+          "subtitle": "message.universe_verity.countdown.arrival"
+        }
+      ]
+    },
+    "countdown_transform": {
+      "category": "TRANSFORM",
+      "variants": [
+        {
+          "id": "transform",
+          "sound": "verity.countdown.transform",
+          "duration_ticks": 80,
+          "subtitle": "subtitles.universe_verity.countdown.transform",
+          "volume": 1.0,
+          "pitch": 1.0
+        }
+      ]
+    }
+  },
+  "conversations": {
+    "countdown_warning_sequence": {
+      "category": "COUNTDOWN",
+      "steps": [
+        { "pool": "countdown_warning_01", "pause_after_ticks": 40 },
+        { "pool": "countdown_warning_02", "pause_after_ticks": 20 },
+        { "pool": "countdown_warning_03", "pause_after_ticks": 0 }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "universe_verity:verity_item"
+    },
+    "title": {
+      "translate": "advancements.universe_verity.root.title"
+    },
+    "description": {
+      "translate": "advancements.universe_verity.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png"
+  },
+  "criteria": {
+    "joined": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

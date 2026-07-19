@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "trust_happy": {
+      "category": "MOOD",
+      "variants": [
+        {
+          "id": "happy_a",
+          "sound": "verity.trust.happy_a",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.happy_a"
+        },
+        {
+          "id": "happy_b",
+          "sound": "verity.trust.happy_b",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.happy_b"
+        }
+      ]
+    },
+    "trust_friendly": {
+      "category": "MOOD",
+      "variants": [
+        {
+          "id": "friendly_a",
+          "sound": "verity.trust.friendly_a",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.friendly_a"
+        },
+        {
+          "id": "friendly_b",
+          "sound": "verity.trust.friendly_b",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.friendly_b"
+        }
+      ]
+    },
+    "trust_meh": {
+      "category": "MOOD",
+      "variants": [
+        {
+          "id": "meh_a",
+          "sound": "verity.trust.meh_a",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.meh_a"
+        },
+        {
+          "id": "meh_b",
+          "sound": "verity.trust.meh_b",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.meh_b"
+        }
+      ]
+    },
+    "trust_angry": {
+      "category": "MOOD",
+      "variants": [
+        {
+          "id": "angry_a",
+          "sound": "verity.trust.angry_a",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.angry_a"
+        },
+        {
+          "id": "angry_b",
+          "sound": "verity.trust.angry_b",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.angry_b"
+        }
+      ]
+    },
+    "trust_furious": {
+      "category": "MOOD",
+      "variants": [
+        {
+          "id": "furious_a",
+          "sound": "verity.trust.furious_a",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.furious_a"
+        },
+        {
+          "id": "furious_b",
+          "sound": "verity.trust.furious_b",
+          "duration_ticks": 40,
+          "subtitle": "subtitles.universe_verity.trust.furious_b"
+        }
+      ]
+    }
+  }
+}

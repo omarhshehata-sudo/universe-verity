@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "box_intro_lines": {
+      "category": "BOX_INTRO",
+      "variants": [
+        {
+          "id": "hellooo",
+          "sound": "verity.box.hellooo",
+          "duration_ticks": 26,
+          "subtitle": "subtitles.universe_verity.box.hellooo",
+          "volume": 0.82,
+          "pitch": 0.98
+        },
+        {
+          "id": "is_someone_out_there",
+          "sound": "verity.box.is_someone_out_there",
+          "duration_ticks": 32,
+          "subtitle": "subtitles.universe_verity.box.is_someone_out_there",
+          "volume": 0.82,
+          "pitch": 0.98
+        },
+        {
+          "id": "i_can_hear_you_moving",
+          "sound": "verity.box.i_can_hear_you_moving",
+          "duration_ticks": 30,
+          "subtitle": "subtitles.universe_verity.box.i_can_hear_you_moving",
+          "volume": 0.82,
+          "pitch": 0.98
+        },
+        {
+          "id": "could_you_open_this",
+          "sound": "verity.box.could_you_open_this",
+          "duration_ticks": 26,
+          "subtitle": "subtitles.universe_verity.box.could_you_open_this",
+          "volume": 0.82,
+          "pitch": 0.98
+        },
+        {
+          "id": "please",
+          "sound": "verity.box.please",
+          "duration_ticks": 17,
+          "subtitle": "subtitles.universe_verity.box.please",
+          "volume": 0.82,
+          "pitch": 0.98
+        },
+        {
+          "id": "youre_still_there",
+          "sound": "verity.box.youre_still_there",
+          "duration_ticks": 51,
+          "subtitle": "subtitles.universe_verity.box.youre_still_there",
+          "volume": 0.82,
+          "pitch": 0.98
+        }
+      ]
+    }
+  }
+}

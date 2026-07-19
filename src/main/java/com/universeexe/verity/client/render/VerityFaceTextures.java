@@ -16,10 +16,17 @@ public final class VerityFaceTextures {
     }
 
     public static ResourceLocation forEntity(VerityEntity entity) {
-        String base = baseVariant(entity.getRenderExpression(), entity.getFaceVariant());
-        boolean talking = entity.isVisuallyTalking();
-        String file = talking ? talkingVariant(base) : base;
-        return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/" + file + ".png");
+        // Trust mood faces take priority over transient expression variants (except hurt/talking).
+        String faceVariant = entity.getFaceVariant();
+        if (faceVariant != null && "hurt".equalsIgnoreCase(faceVariant)) {
+            return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/hurt.png");
+        }
+        if (entity.isVisuallyTalking()) {
+            String base = baseVariant(entity.getRenderExpression(), faceVariant);
+            return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/" + talkingVariant(base) + ".png");
+        }
+        String moodFace = entity.getMoodState().faceTextureName();
+        return new ResourceLocation(UniverseVerity.MOD_ID, "textures/entity/verity/" + moodFace + ".png");
     }
 
     public static ResourceLocation forVariant(String variant) {

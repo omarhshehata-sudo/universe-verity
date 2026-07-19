@@ -268,5 +268,986 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "verity.trust.happy_a": {
+    "subtitle": "subtitles.universe_verity.trust.happy_a",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/happy_a",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.happy_b": {
+    "subtitle": "subtitles.universe_verity.trust.happy_b",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/happy_b",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.friendly_a": {
+    "subtitle": "subtitles.universe_verity.trust.friendly_a",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/friendly_a",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.friendly_b": {
+    "subtitle": "subtitles.universe_verity.trust.friendly_b",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/friendly_b",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.meh_a": {
+    "subtitle": "subtitles.universe_verity.trust.meh_a",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/meh_a",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.meh_b": {
+    "subtitle": "subtitles.universe_verity.trust.meh_b",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/meh_b",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.angry_a": {
+    "subtitle": "subtitles.universe_verity.trust.angry_a",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/angry_a",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.angry_b": {
+    "subtitle": "subtitles.universe_verity.trust.angry_b",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/angry_b",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.furious_a": {
+    "subtitle": "subtitles.universe_verity.trust.furious_a",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/furious_a",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.trust.furious_b": {
+    "subtitle": "subtitles.universe_verity.trust.furious_b",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/trust/furious_b",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.warning_01": {
+    "subtitle": "subtitles.universe_verity.countdown.warning_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/warning_01",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.warning_02": {
+    "subtitle": "subtitles.universe_verity.countdown.warning_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/warning_02",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.warning_03": {
+    "subtitle": "subtitles.universe_verity.countdown.warning_03",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/warning_03",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.two_days": {
+    "subtitle": "subtitles.universe_verity.countdown.two_days",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/two_days",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.one_day": {
+    "subtitle": "subtitles.universe_verity.countdown.one_day",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/one_day",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.arrival": {
+    "subtitle": "subtitles.universe_verity.countdown.arrival",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/arrival",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.countdown.transform": {
+    "subtitle": "subtitles.universe_verity.countdown.transform",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/countdown/transform",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.monster.remember": {
+    "subtitle": "subtitles.universe_verity.monster.remember",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/monster/remember",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.monster.listened": {
+    "subtitle": "subtitles.universe_verity.monster.listened",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/monster/listened",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.monster.know_where": {
+    "subtitle": "subtitles.universe_verity.monster.know_where",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/monster/know_where",
+        "stream": false,
+        "volume": 0.95
+      }
+    ]
+  },
+  "verity.q01.box.hello": {
+    "subtitle": "subtitles.universe_verity.q01.box.hello",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/hello",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.anyone_there": {
+    "subtitle": "subtitles.universe_verity.q01.box.anyone_there",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/anyone_there",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.hear_moving": {
+    "subtitle": "subtitles.universe_verity.q01.box.hear_moving",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/hear_moving",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.open_request": {
+    "subtitle": "subtitles.universe_verity.q01.box.open_request",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/open_request",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.please": {
+    "subtitle": "subtitles.universe_verity.q01.box.please",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/please",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.still_there_01": {
+    "subtitle": "subtitles.universe_verity.q01.box.still_there_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/still_there_01",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.still_there_02": {
+    "subtitle": "subtitles.universe_verity.q01.box.still_there_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/still_there_02",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.open_myself_01": {
+    "subtitle": "subtitles.universe_verity.q01.box.open_myself_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/open_myself_01",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.box.open_myself_02": {
+    "subtitle": "subtitles.universe_verity.q01.box.open_myself_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/box/open_myself_02",
+        "stream": false,
+        "volume": 0.9,
+        "pitch": 1.0,
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "verity.q01.reveal.oh": {
+    "subtitle": "subtitles.universe_verity.q01.reveal.oh",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/reveal/oh",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.reveal.found_opening": {
+    "subtitle": "subtitles.universe_verity.q01.reveal.found_opening",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/reveal/found_opening",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.hello": {
+    "subtitle": "subtitles.universe_verity.q01.intro.hello",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/hello",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.name": {
+    "subtitle": "subtitles.universe_verity.q01.intro.name",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/name",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.helper_friend": {
+    "subtitle": "subtitles.universe_verity.q01.intro.helper_friend",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/helper_friend",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.ask_anything": {
+    "subtitle": "subtitles.universe_verity.q01.intro.ask_anything",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/ask_anything",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.know_everything": {
+    "subtitle": "subtitles.universe_verity.q01.intro.know_everything",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/know_everything",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.almost_everything": {
+    "subtitle": "subtitles.universe_verity.q01.intro.almost_everything",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/almost_everything",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q01.intro.everything_important": {
+    "subtitle": "subtitles.universe_verity.q01.intro.everything_important",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q01/intro/everything_important",
+        "stream": true,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.hello": {
+    "subtitle": "subtitles.universe_verity.q02.first.hello",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/hello",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.hoping": {
+    "subtitle": "subtitles.universe_verity.q02.first.hoping",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/hoping",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.imagined_voice": {
+    "subtitle": "subtitles.universe_verity.q02.first.imagined_voice",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/imagined_voice",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.didnt_imagine": {
+    "subtitle": "subtitles.universe_verity.q02.first.didnt_imagine",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/didnt_imagine",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.already_knew": {
+    "subtitle": "subtitles.universe_verity.q02.first.already_knew",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/already_knew",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.first.nice_to_meet": {
+    "subtitle": "subtitles.universe_verity.q02.first.nice_to_meet",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/first/nice_to_meet",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.followup.know_what": {
+    "subtitle": "subtitles.universe_verity.q02.followup.know_what",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/followup/know_what",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.followup.dont_remember": {
+    "subtitle": "subtitles.universe_verity.q02.followup.dont_remember",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/followup/dont_remember",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.followup.did_i": {
+    "subtitle": "subtitles.universe_verity.q02.followup.did_i",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/followup/did_i",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.hello_again": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.hello_again",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/hello_again",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.hi": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.hi",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/hi",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.no_introduction_01": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.no_introduction_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/no_introduction_01",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.no_introduction_02": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.no_introduction_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/no_introduction_02",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.likes_name": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.likes_name",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/likes_name",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q02.repeat.happier": {
+    "subtitle": "subtitles.universe_verity.q02.repeat.happier",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q02/repeat/happier",
+        "stream": false,
+        "volume": 0.92,
+        "pitch": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.beep_01": {
+    "subtitle": "subtitles.universe_verity.q03.beep_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/beep_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.beep_02": {
+    "subtitle": "subtitles.universe_verity.q03.beep_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/beep_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.boom_01": {
+    "subtitle": "subtitles.universe_verity.q03.boom_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/boom_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cat_01": {
+    "subtitle": "subtitles.universe_verity.q03.cat_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cat_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cat_defense_01": {
+    "subtitle": "subtitles.universe_verity.q03.cat_defense_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cat_defense_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cat_defense_02": {
+    "subtitle": "subtitles.universe_verity.q03.cat_defense_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cat_defense_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cave_01": {
+    "subtitle": "subtitles.universe_verity.q03.cave_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cave_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cave_no_01": {
+    "subtitle": "subtitles.universe_verity.q03.cave_no_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cave_no_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cave_silence_01": {
+    "subtitle": "subtitles.universe_verity.q03.cave_silence_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cave_silence_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cave_yes_01": {
+    "subtitle": "subtitles.universe_verity.q03.cave_yes_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cave_yes_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.cave_yes_02": {
+    "subtitle": "subtitles.universe_verity.q03.cave_yes_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/cave_yes_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.evaluation_01": {
+    "subtitle": "subtitles.universe_verity.q03.evaluation_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/evaluation_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.intro_01": {
+    "subtitle": "subtitles.universe_verity.q03.intro_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/intro_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.intro_02": {
+    "subtitle": "subtitles.universe_verity.q03.intro_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/intro_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_boom_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_boom_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_boom_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_cat_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_cat_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_cat_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_cave_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_cave_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_cave_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_cave_rare_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_cave_rare_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_cave_rare_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_imitation_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_imitation_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_imitation_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_request_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_request_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_request_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_request_02": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_request_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_request_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_request_03": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_request_03",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_request_03",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_request_rare_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_request_rare_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_request_rare_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.repeat_squeak_01": {
+    "subtitle": "subtitles.universe_verity.q03.repeat_squeak_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/repeat_squeak_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.response_another_01": {
+    "subtitle": "subtitles.universe_verity.q03.response_another_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/response_another_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.response_another_02": {
+    "subtitle": "subtitles.universe_verity.q03.response_another_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/response_another_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.response_negative_01": {
+    "subtitle": "subtitles.universe_verity.q03.response_negative_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/response_negative_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.response_negative_02": {
+    "subtitle": "subtitles.universe_verity.q03.response_negative_02",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/response_negative_02",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.response_positive_01": {
+    "subtitle": "subtitles.universe_verity.q03.response_positive_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/response_positive_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.sfx_boom": {
+    "subtitle": "subtitles.universe_verity.q03.sfx_boom",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/sfx_boom",
+        "stream": false,
+        "volume": 0.85,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.sfx_cave": {
+    "subtitle": "subtitles.universe_verity.q03.sfx_cave",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/sfx_cave",
+        "stream": false,
+        "volume": 0.75,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.sfx_fake_imitation": {
+    "subtitle": "subtitles.universe_verity.q03.sfx_fake_imitation",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/sfx_fake_imitation",
+        "stream": false,
+        "volume": 0.85,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.sfx_squeak": {
+    "subtitle": "subtitles.universe_verity.q03.sfx_squeak",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/sfx_squeak",
+        "stream": false,
+        "volume": 0.85,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.sfx_tiny_beep": {
+    "subtitle": "subtitles.universe_verity.q03.sfx_tiny_beep",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/sfx_tiny_beep",
+        "stream": false,
+        "volume": 0.85,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.q03.squeak_01": {
+    "subtitle": "subtitles.universe_verity.q03.squeak_01",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/q03/squeak_01",
+        "stream": false,
+        "volume": 0.92,
+        "attenuation_distance": 16
+      }
+    ]
   }
 }

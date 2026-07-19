@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "companion_follow": {
+      "category": "PLAYER_INTERACTION",
+      "variants": [
+        {
+          "id": "okay_where_are_we_going",
+          "sound": "verity.voice.okay_where_are_we_going",
+          "duration_ticks": 45,
+          "subtitle": "subtitles.universe_verity.verity.okay_where_are_we_going"
+        },
+        {
+          "id": "alright_right_behind_you",
+          "sound": "verity.voice.alright_right_behind_you",
+          "duration_ticks": 60,
+          "subtitle": "subtitles.universe_verity.verity.alright_right_behind_you"
+        },
+        {
+          "id": "lead_the_way",
+          "sound": "verity.voice.lead_the_way",
+          "duration_ticks": 26,
+          "subtitle": "subtitles.universe_verity.verity.lead_the_way"
+        }
+      ]
+    },
+    "companion_hello_main": {
+      "category": "PLAYER_INTERACTION",
+      "variants": [
+        {
+          "id": "hello_hoping_you_would_talk",
+          "sound": "verity.voice.hello_hoping_you_would_talk",
+          "duration_ticks": 58,
+          "subtitle": "subtitles.universe_verity.verity.hello_hoping_you_would_talk"
+        },
+        {
+          "id": "hello_again",
+          "sound": "verity.voice.hello_again",
+          "duration_ticks": 25,
+          "subtitle": "subtitles.universe_verity.verity.hello_again"
+        }
+      ]
+    }
+  },
+  "conversations": {
+    "companion_hello_short": {
+      "category": "PLAYER_INTERACTION",
+      "steps": [
+        { "pool": "companion_hello_main", "pause_after_ticks": 0 }
+      ]
+    },
+    "companion_hello_whisper": {
+      "category": "PLAYER_INTERACTION",
+      "steps": [
+        { "pool": "companion_hello_main", "pause_after_ticks": 8 },
+        {
+          "sound": "verity.voice.your_voice_sounds_exactly",
+          "duration_ticks": 58,
+          "subtitle": "subtitles.universe_verity.verity.your_voice_sounds_exactly",
+          "pause_after_ticks": 12
+        },
+        {
+          "sound": "verity.voice.i_mean_imagined_it",
+          "duration_ticks": 39,
+          "subtitle": "subtitles.universe_verity.verity.i_mean_imagined_it",
+          "pause_after_ticks": 0
+        }
+      ]
+    }
+  }
+}

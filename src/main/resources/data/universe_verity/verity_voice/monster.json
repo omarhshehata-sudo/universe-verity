@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "monster_ambient": {
+      "category": "MONSTER",
+      "variants": [
+        {
+          "id": "remember",
+          "sound": "verity.monster.remember",
+          "duration_ticks": 50,
+          "subtitle": "message.universe_verity.monster.remember"
+        },
+        {
+          "id": "listened",
+          "sound": "verity.monster.listened",
+          "duration_ticks": 50,
+          "subtitle": "message.universe_verity.monster.listened"
+        },
+        {
+          "id": "know_where",
+          "sound": "verity.monster.know_where",
+          "duration_ticks": 50,
+          "subtitle": "message.universe_verity.monster.know_where"
+        }
+      ]
+    }
+  }
+}

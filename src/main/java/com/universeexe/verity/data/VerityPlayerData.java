@@ -19,7 +19,32 @@ public final class VerityPlayerData {
             root.putInt(VerityIntroDataKeys.PROGRESSION_VERSION, VerityIntroDataKeys.CURRENT_PROGRESSION_VERSION);
             persistent.put(VerityIntroDataKeys.ROOT, root);
         }
-        return persistent.getCompound(VerityIntroDataKeys.ROOT);
+        CompoundTag root = persistent.getCompound(VerityIntroDataKeys.ROOT);
+        migrateLegacyProgression(player, root);
+        return root;
+    }
+
+    private static void migrateLegacyProgression(Player player, CompoundTag root) {
+        if (root.getBoolean(VerityIntroDataKeys.REVEAL_COMPLETED) && !root.getBoolean(VerityIntroDataKeys.Q1_QUEST_COMPLETE)) {
+            root.putBoolean(VerityIntroDataKeys.Q1_QUEST_COMPLETE, true);
+            root.putBoolean(VerityIntroDataKeys.VERITY_REVEALED, true);
+            if (!root.contains(VerityIntroDataKeys.VERITY_RELATIONSHIP)) {
+                root.putString(VerityIntroDataKeys.VERITY_RELATIONSHIP, "new");
+            }
+        }
+        if (root.getBoolean(VerityIntroDataKeys.GREETING_COMPLETED) && !root.getBoolean(VerityIntroDataKeys.Q2_QUEST_COMPLETE)) {
+            root.putBoolean(VerityIntroDataKeys.Q2_QUEST_COMPLETE, true);
+            root.putBoolean(VerityIntroDataKeys.VERITY_GREETED, true);
+        }
+        if (root.getBoolean("verity_made_sound") && !root.getBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE)) {
+            root.putBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE, true);
+        }
+        if (root.getBoolean("verity_q03_complete") && !root.getBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE)) {
+            root.putBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE, true);
+        }
+        if (root.getBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE) && !root.getBoolean(VerityIntroDataKeys.Q3_QUEST_COMPLETE)) {
+            root.putBoolean(VerityIntroDataKeys.Q3_QUEST_COMPLETE, true);
+        }
     }
 
     public static void copy(Player original, Player clone) {
@@ -158,5 +183,151 @@ public final class VerityPlayerData {
         setIntroCompleted(player, true);
         setVerityUuid(player, verityUuid);
         setBoxUuid(player, null);
+    }
+
+    public static boolean isVerityRevealed(Player player) {
+        CompoundTag tag = get(player);
+        if (tag.contains(VerityIntroDataKeys.VERITY_REVEALED)) {
+            return tag.getBoolean(VerityIntroDataKeys.VERITY_REVEALED);
+        }
+        return isRevealCompleted(player);
+    }
+
+    public static void setVerityRevealed(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.VERITY_REVEALED, value);
+        if (value) {
+            setRevealCompleted(player, true);
+        }
+    }
+
+    public static String getRelationship(Player player) {
+        return get(player).getString(VerityIntroDataKeys.VERITY_RELATIONSHIP);
+    }
+
+    public static void setRelationship(Player player, String value) {
+        if (value == null || value.isBlank()) {
+            get(player).remove(VerityIntroDataKeys.VERITY_RELATIONSHIP);
+        } else {
+            get(player).putString(VerityIntroDataKeys.VERITY_RELATIONSHIP, value);
+        }
+    }
+
+    public static boolean isVerityGreeted(Player player) {
+        CompoundTag tag = get(player);
+        if (tag.contains(VerityIntroDataKeys.VERITY_GREETED)) {
+            return tag.getBoolean(VerityIntroDataKeys.VERITY_GREETED);
+        }
+        return isGreetingCompleted(player);
+    }
+
+    public static void setVerityGreeted(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.VERITY_GREETED, value);
+        setGreetingCompleted(player, value);
+    }
+
+    public static boolean isVoiceKnowledgeQuestioned(Player player) {
+        return get(player).getBoolean(VerityIntroDataKeys.VERITY_VOICE_KNOWLEDGE_QUESTIONED);
+    }
+
+    public static void setVoiceKnowledgeQuestioned(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.VERITY_VOICE_KNOWLEDGE_QUESTIONED, value);
+    }
+
+    public static int getFamiliarity(Player player) {
+        return get(player).getInt(VerityIntroDataKeys.VERITY_FAMILIARITY);
+    }
+
+    public static void addFamiliarity(Player player, int delta) {
+        CompoundTag tag = get(player);
+        tag.putInt(VerityIntroDataKeys.VERITY_FAMILIARITY, Math.max(0, tag.getInt(VerityIntroDataKeys.VERITY_FAMILIARITY) + delta));
+    }
+
+    public static int getQ1BoxLinesPlayed(Player player) {
+        return get(player).getInt(VerityIntroDataKeys.Q1_BOX_LINES_PLAYED);
+    }
+
+    public static void markQ1BoxLinePlayed(Player player, int lineBit) {
+        CompoundTag tag = get(player);
+        tag.putInt(VerityIntroDataKeys.Q1_BOX_LINES_PLAYED, tag.getInt(VerityIntroDataKeys.Q1_BOX_LINES_PLAYED) | lineBit);
+    }
+
+    public static boolean hasQ1BoxLinePlayed(Player player, int lineBit) {
+        return (getQ1BoxLinesPlayed(player) & lineBit) != 0;
+    }
+
+    public static int getQ1RarePairsPlayed(Player player) {
+        return get(player).getInt(VerityIntroDataKeys.Q1_RARE_PAIRS_PLAYED);
+    }
+
+    public static void markQ1RarePairPlayed(Player player, int pairBit) {
+        CompoundTag tag = get(player);
+        tag.putInt(VerityIntroDataKeys.Q1_RARE_PAIRS_PLAYED, tag.getInt(VerityIntroDataKeys.Q1_RARE_PAIRS_PLAYED) | pairBit);
+    }
+
+    public static boolean hasQ1RarePairPlayed(Player player, int pairBit) {
+        return (getQ1RarePairsPlayed(player) & pairBit) != 0;
+    }
+
+    public static boolean isQuest1Complete(Player player) {
+        return get(player).getBoolean(VerityIntroDataKeys.Q1_QUEST_COMPLETE);
+    }
+
+    public static void setQuest1Complete(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.Q1_QUEST_COMPLETE, value);
+    }
+
+    public static boolean isQuest2Complete(Player player) {
+        return get(player).getBoolean(VerityIntroDataKeys.Q2_QUEST_COMPLETE);
+    }
+
+    public static void setQuest2Complete(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.Q2_QUEST_COMPLETE, value);
+    }
+
+    public static long getQ2FollowupUntil(Player player) {
+        return get(player).getLong(VerityIntroDataKeys.Q2_FOLLOWUP_UNTIL);
+    }
+
+    public static void setQ2FollowupUntil(Player player, long gameTime) {
+        get(player).putLong(VerityIntroDataKeys.Q2_FOLLOWUP_UNTIL, gameTime);
+    }
+
+    public static long getQ2LastRepeatGameTime(Player player) {
+        return get(player).getLong(VerityIntroDataKeys.Q2_LAST_REPEAT_GAME_TIME);
+    }
+
+    public static void setQ2LastRepeatGameTime(Player player, long gameTime) {
+        get(player).putLong(VerityIntroDataKeys.Q2_LAST_REPEAT_GAME_TIME, gameTime);
+    }
+
+    public static boolean isQuest3Complete(Player player) {
+        CompoundTag tag = get(player);
+        if (tag.contains(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE)) {
+            return tag.getBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE);
+        }
+        return tag.getBoolean(VerityIntroDataKeys.Q3_QUEST_COMPLETE);
+    }
+
+    public static void setQuest3Complete(Player player, boolean value) {
+        CompoundTag tag = get(player);
+        tag.putBoolean(VerityIntroDataKeys.VERITY_SOUND_QUEST_COMPLETE, value);
+        tag.putBoolean(VerityIntroDataKeys.VERITY_MADE_SOUND, value);
+        tag.putBoolean(VerityIntroDataKeys.Q3_QUEST_COMPLETE, value);
+    }
+
+    public static long getQ3LastRareRequestGameTime(Player player) {
+        return get(player).getLong(VerityIntroDataKeys.Q3_LAST_RARE_REQUEST_GAME_TIME);
+    }
+
+    public static void setQ3LastRareRequestGameTime(Player player, long gameTime) {
+        get(player).putLong(VerityIntroDataKeys.Q3_LAST_RARE_REQUEST_GAME_TIME, gameTime);
+    }
+
+    public static boolean hasHeardUnknownSound(Player player) {
+        return get(player).getBoolean(VerityIntroDataKeys.VERITY_HEARD_UNKNOWN_SOUND);
+    }
+
+    public static void setHeardUnknownSound(Player player, boolean value) {
+        get(player).putBoolean(VerityIntroDataKeys.VERITY_HEARD_UNKNOWN_SOUND, value);
     }
 }

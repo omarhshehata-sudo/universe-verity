@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "quest_03_repeat_opener": {
+      "category": "QUEST",
+      "variants": [
+        {
+          "id": "repeat_request_01",
+          "sound": "verity.q03.repeat_request_01",
+          "duration_ticks": 21,
+          "subtitle": "subtitles.universe_verity.q03.repeat_request_01",
+          "weight": 40,
+          "volume": 0.92,
+          "cooldown_ticks": 40
+        },
+        {
+          "id": "repeat_request_02",
+          "sound": "verity.q03.repeat_request_02",
+          "duration_ticks": 32,
+          "subtitle": "subtitles.universe_verity.q03.repeat_request_02",
+          "weight": 35,
+          "volume": 0.92,
+          "cooldown_ticks": 40
+        },
+        {
+          "id": "repeat_request_03",
+          "sound": "verity.q03.repeat_request_03",
+          "duration_ticks": 29,
+          "subtitle": "subtitles.universe_verity.q03.repeat_request_03",
+          "weight": 20,
+          "volume": 0.92,
+          "cooldown_ticks": 40
+        },
+        {
+          "id": "repeat_request_rare_01",
+          "sound": "verity.q03.repeat_request_rare_01",
+          "duration_ticks": 34,
+          "subtitle": "subtitles.universe_verity.q03.repeat_request_rare_01",
+          "weight": 5,
+          "volume": 0.92,
+          "rare": true,
+          "cooldown_ticks": 24000
+        }
+      ]
+    }
+  },
+  "conversations": {
+    "quest_03_first_make_sound": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.intro_01",
+          "duration_ticks": 19,
+          "subtitle": "subtitles.universe_verity.q03.intro_01",
+          "pause_after_ticks": 14
+        },
+        {
+          "sound": "verity.q03.intro_02",
+          "duration_ticks": 25,
+          "subtitle": "subtitles.universe_verity.q03.intro_02",
+          "pause_after_ticks": 20
+        }
+      ]
+    },
+    "quest_03_evaluation": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.evaluation_01",
+          "duration_ticks": 24,
+          "subtitle": "subtitles.universe_verity.q03.evaluation_01",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_response_positive": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.response_positive_01",
+          "duration_ticks": 32,
+          "subtitle": "subtitles.universe_verity.q03.response_positive_01",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_response_negative": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.response_negative_01",
+          "duration_ticks": 13,
+          "subtitle": "subtitles.universe_verity.q03.response_negative_01",
+          "pause_after_ticks": 24
+        },
+        {
+          "sound": "verity.q03.response_negative_02",
+          "duration_ticks": 27,
+          "subtitle": "subtitles.universe_verity.q03.response_negative_02",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_response_another": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.response_another_01",
+          "duration_ticks": 41,
+          "subtitle": "subtitles.universe_verity.q03.response_another_01",
+          "pause_after_ticks": 16
+        },
+        {
+          "sound": "verity.q03.response_another_02",
+          "duration_ticks": 34,
+          "subtitle": "subtitles.universe_verity.q03.response_another_02",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_cave_yes": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.cave_yes_01",
+          "duration_ticks": 16,
+          "subtitle": "subtitles.universe_verity.q03.cave_yes_01",
+          "pause_after_ticks": 16
+        },
+        {
+          "sound": "verity.q03.cave_yes_02",
+          "duration_ticks": 34,
+          "subtitle": "subtitles.universe_verity.q03.cave_yes_02",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_cave_no": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.cave_no_01",
+          "duration_ticks": 35,
+          "subtitle": "subtitles.universe_verity.q03.cave_no_01",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_cave_silence": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.cave_silence_01",
+          "duration_ticks": 33,
+          "subtitle": "subtitles.universe_verity.q03.cave_silence_01",
+          "pause_after_ticks": 0
+        }
+      ]
+    },
+    "quest_03_cat_defense": {
+      "category": "QUEST",
+      "steps": [
+        {
+          "sound": "verity.q03.cat_defense_01",
+          "duration_ticks": 35,
+          "subtitle": "subtitles.universe_verity.q03.cat_defense_01",
+          "pause_after_ticks": 14
+        },
+        {
+          "sound": "verity.q03.cat_defense_02",
+          "duration_ticks": 36,
+          "subtitle": "subtitles.universe_verity.q03.cat_defense_02",
+          "pause_after_ticks": 0
+        }
+      ]
+    }
+  },
+  "_comment": "First-time flow: conversation quest_03_first_make_sound (intro) then VerityQuest3Handler demo branches + response windows. Repeat openers use quest_03_repeat_opener pool weights in handler."
+}

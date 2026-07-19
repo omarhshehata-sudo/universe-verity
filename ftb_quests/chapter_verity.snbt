@@ -1,0 +1,104 @@
+{
+	id: "verity_chapter"
+	order_index: 0
+	filename: "verity"
+	title: "Verity"
+	icon: {
+		id: "minecraft:chest"
+	}
+	default_quest_shape: ""
+	default_hide_dependency_lines: false
+	quests: [
+		{
+			id: "verity_meet_verity"
+			x: 0.0d
+			y: 0.0d
+			shape: "hexagon"
+			size: 2.0d
+			title: "MEET VERITY!"
+			subtitle: "Something arrived with you."
+			icon: {
+				id: "minecraft:chest"
+			}
+			tasks: [
+				{
+					id: "verity_meet_verity_task"
+					type: "custom"
+					title: "Open your sealed box and meet Verity"
+				}
+			]
+			rewards: [
+				{
+					id: "verity_meet_verity_xp"
+					type: "xp"
+					xp: 50
+				}
+			]
+		}
+		{
+			id: "verity_say_hello"
+			x: 4.0d
+			y: 0.0d
+			shape: "circle"
+			size: 1.5d
+			title: "SAY HELLO"
+			subtitle: "He is waiting for your voice."
+			dependencies: ["verity_meet_verity"]
+			icon: {
+				id: "minecraft:echo_shard"
+			}
+			tasks: [
+				{
+					id: "verity_say_hello_task"
+					type: "custom"
+					title: "Say hello to Verity (voice intent)"
+				}
+			]
+			rewards: [
+				{
+					id: "verity_say_hello_xp"
+					type: "xp"
+					xp: 35
+				}
+			]
+		}
+		{
+			id: "verity_make_a_sound"
+			x: 8.0d
+			y: 0.0d
+			shape: "circle"
+			size: 1.5d
+			title: "MAKE A SOUND"
+			subtitle: "A demonstration of incredible power."
+			dependencies: ["verity_say_hello"]
+			icon: {
+				id: "minecraft:note_block"
+			}
+			description: [
+				"Verity claims he can do almost anything."
+				""
+				"So far, he has mostly talked about what he knows. Perhaps it is time for a more practical demonstration."
+				""
+				"Stand near Verity, hold push-to-talk, and ask him to make a sound."
+				"{@pagebreak}"
+				"Verity successfully produced a sound."
+				""
+				"He appears extremely proud of this achievement and now considers sound-making a repeatable experiment."
+			]
+			tasks: [
+				{
+					id: "verity_make_a_sound_task"
+					type: "custom"
+					title: "Ask Verity to make a sound."
+				}
+			]
+			rewards: [
+				{
+					id: "verity_make_a_sound_xp"
+					type: "xp"
+					xp: 40
+				}
+			]
+		}
+	]
+}

@@ -6,12 +6,18 @@ import com.universeexe.verity.config.VerityCommonConfig;
 import com.universeexe.verity.event.PlayerDataHandler;
 import com.universeexe.verity.event.PlayerIntroductionHandler;
 import com.universeexe.verity.event.VerityItemInteractions;
+import com.universeexe.verity.network.VerityNetwork;
+import com.universeexe.verity.quest.VerityQuest3Handler;
+import com.universeexe.verity.trust.VerityTrustEvents;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.registry.VerityItems;
 import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.util.VerityAssetValidator;
+import com.universeexe.verity.voice.VerityVoiceEvents;
+import com.universeexe.verity.voice.VerityVoiceScheduler;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -42,8 +48,14 @@ public class UniverseVerity {
         MinecraftForge.EVENT_BUS.register(new PlayerIntroductionHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerDataHandler());
         MinecraftForge.EVENT_BUS.register(new VerityItemInteractions());
+        MinecraftForge.EVENT_BUS.register(new VerityTrustEvents());
+        MinecraftForge.EVENT_BUS.register(new VerityVoiceScheduler());
+        MinecraftForge.EVENT_BUS.register(new VerityVoiceEvents());
+        MinecraftForge.EVENT_BUS.register(new VerityQuest3Handler());
         MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+        MinecraftForge.EVENT_BUS.addListener(this::onAddReloadListeners);
+        com.universeexe.verity.quest.VerityFtbQuestBridge.bootstrap();
 
         if (FMLEnvironment.dist.isClient()) {
             com.universeexe.verity.client.VerityClient.init(modBus);
@@ -51,7 +63,10 @@ public class UniverseVerity {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(VerityAssetValidator::validate);
+        event.enqueueWork(() -> {
+            VerityNetwork.register();
+            VerityAssetValidator.validate();
+        });
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
@@ -59,6 +74,10 @@ public class UniverseVerity {
     }
 
     private void onServerStarting(ServerStartingEvent event) {
-        LOGGER.info("Universe: Verity loaded (sealed-box intro + reveal)");
+        LOGGER.info("Universe: Verity loaded (sealed-box intro + reveal + voice director)");
+    }
+
+    private void onAddReloadListeners(AddReloadListenerEvent event) {
+        VerityVoiceEvents.registerReloadListener(event);
     }
 }

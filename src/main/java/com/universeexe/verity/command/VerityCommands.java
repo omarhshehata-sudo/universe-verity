@@ -2,6 +2,7 @@ package com.universeexe.verity.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.universeexe.verity.animation.VerityExpressionState;
@@ -12,8 +13,16 @@ import com.universeexe.verity.entity.VerityEntity;
 import com.universeexe.verity.entity.VerityRevealStage;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.registry.VeritySounds;
+import com.universeexe.verity.trust.TrustReason;
+import com.universeexe.verity.trust.VerityTrustKeys;
+import com.universeexe.verity.trust.VerityTrustManager;
 import com.universeexe.verity.util.SafeBoxPlacement;
 import com.universeexe.verity.util.VerityDebug;
+import com.universeexe.verity.voice.VerityVoiceCategory;
+import com.universeexe.verity.voice.VerityVoiceContext;
+import com.universeexe.verity.voice.VerityVoiceDirector;
+import com.universeexe.verity.voice.VerityVoiceManifest;
+import com.universeexe.verity.voice.VerityVoiceVariant;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -55,6 +64,17 @@ public final class VerityCommands {
                             .map(VerityExpressionState::id)
                             .collect(Collectors.toList()),
                     builder);
+    private static final SuggestionProvider<CommandSourceStack> VOICE_POOL_SUGGESTIONS = (ctx, builder) ->
+            SharedSuggestionProvider.suggest(VerityVoiceManifest.get().pools().keySet(), builder);
+    private static final SuggestionProvider<CommandSourceStack> VOICE_CONVERSATION_SUGGESTIONS = (ctx, builder) ->
+            SharedSuggestionProvider.suggest(VerityVoiceManifest.get().conversations().keySet(), builder);
+    private static final SuggestionProvider<CommandSourceStack> VOICE_EVENT_SUGGESTIONS = (ctx, builder) -> {
+        var pools = VerityVoiceManifest.get().pools().keySet();
+        var conversations = VerityVoiceManifest.get().conversations().keySet();
+        return SharedSuggestionProvider.suggest(
+                java.util.stream.Stream.concat(pools.stream(), conversations.stream()).collect(Collectors.toList()),
+                builder);
+    };
 
     private VerityCommands() {
     }
@@ -157,6 +177,89 @@ public final class VerityCommands {
                                 .then(Commands.argument("sound_id", StringArgumentType.greedyString())
                                         .suggests(SOUND_SUGGESTIONS)
                                         .executes(ctx -> playSound(ctx.getSource(), StringArgumentType.getString(ctx, "sound_id"))))))
+                .then(Commands.literal("voice").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("status")
+                                .executes(ctx -> voiceStatus(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("queue")
+                                .executes(ctx -> voiceQueue(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("clear")
+                                .executes(ctx -> voiceClear(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("play")
+                                .then(Commands.argument("event_id", StringArgumentType.word())
+                                        .suggests(VOICE_EVENT_SUGGESTIONS)
+                                        .executes(ctx -> voicePlayEvent(ctx.getSource(),
+                                                ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "event_id")))))
+                        .then(Commands.literal("playraw")
+                                .then(Commands.argument("sound_id", StringArgumentType.greedyString())
+                                        .suggests(SOUND_SUGGESTIONS)
+                                        .executes(ctx -> voicePlayRaw(ctx.getSource(),
+                                                ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "sound_id")))))
+                        .then(Commands.literal("pool")
+                                .then(Commands.argument("pool_id", StringArgumentType.word())
+                                        .suggests(VOICE_POOL_SUGGESTIONS)
+                                        .executes(ctx -> voicePlayPool(ctx.getSource(),
+                                                ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "pool_id")))))
+                        .then(Commands.literal("context")
+                                .executes(ctx -> voiceContext(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("history")
+                                .executes(ctx -> voiceHistory(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("memories")
+                                .executes(ctx -> voiceMemories(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("cooldowns")
+                                .executes(ctx -> voiceCooldowns(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("interrupt")
+                                .executes(ctx -> voiceInterrupt(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("debug")
+                                .then(Commands.literal("on")
+                                        .executes(ctx -> voiceDebug(ctx.getSource(), ctx.getSource().getPlayerOrException(), true)))
+                                .then(Commands.literal("off")
+                                        .executes(ctx -> voiceDebug(ctx.getSource(), ctx.getSource().getPlayerOrException(), false))))
+                        .then(Commands.literal("conversation")
+                                .then(Commands.argument("conversation_id", StringArgumentType.word())
+                                        .suggests(VOICE_CONVERSATION_SUGGESTIONS)
+                                        .executes(ctx -> voicePlayConversation(ctx.getSource(),
+                                                ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "conversation_id")))))
+                        .then(Commands.literal("manifest")
+                                .executes(ctx -> voiceManifest(ctx.getSource()))))
+                .then(Commands.literal("trust").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("get")
+                                .executes(ctx -> trustGet(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(ctx -> trustGet(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
+                        .then(Commands.literal("set")
+                                .then(Commands.argument("value", IntegerArgumentType.integer(VerityTrustKeys.MIN_TRUST, VerityTrustKeys.MAX_TRUST))
+                                        .executes(ctx -> trustSet(ctx.getSource(), ctx.getSource().getPlayerOrException(),
+                                                IntegerArgumentType.getInteger(ctx, "value")))))
+                        .then(Commands.literal("add")
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-20, 20))
+                                        .executes(ctx -> trustAdd(ctx.getSource(), ctx.getSource().getPlayerOrException(),
+                                                IntegerArgumentType.getInteger(ctx, "amount")))))
+                        .then(Commands.literal("reason")
+                                .then(Commands.argument("reason", StringArgumentType.word())
+                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(TrustReason.values()).map(Enum::name)
+                                                        .map(s -> s.toLowerCase(Locale.ROOT)).toList(), b))
+                                        .executes(ctx -> trustReason(ctx.getSource(), ctx.getSource().getPlayerOrException(),
+                                                StringArgumentType.getString(ctx, "reason"))))))
+                .then(Commands.literal("mood").requires(s -> s.hasPermission(2))
+                        .executes(ctx -> moodStatus(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("countdown").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("start")
+                                .executes(ctx -> countdownStart(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("status")
+                                .executes(ctx -> countdownStatus(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("skipday")
+                                .executes(ctx -> countdownSkipDay(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                        .then(Commands.literal("canceldebug")
+                                .executes(ctx -> countdownCancelDebug(ctx.getSource(), ctx.getSource().getPlayerOrException()))))
+                .then(Commands.literal("transform").requires(s -> s.hasPermission(2))
+                        .executes(ctx -> forceTransform(ctx.getSource(), ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("resetstory").requires(s -> s.hasPermission(2))
+                        .executes(ctx -> resetStory(ctx.getSource(), ctx.getSource().getPlayerOrException())))
                 .then(Commands.literal("debug").requires(s -> s.hasPermission(2))
                         .then(Commands.argument("enabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
@@ -166,6 +269,97 @@ public final class VerityCommands {
                                     return 1;
                                 })))
         );
+    }
+
+    private static int trustGet(CommandSourceStack source, ServerPlayer player) {
+        source.sendSuccess(() -> Component.literal(VerityTrustManager.statusText(player)), false);
+        return 1;
+    }
+
+    private static int trustSet(CommandSourceStack source, ServerPlayer player, int value) {
+        VerityEntity verity = VerityTrustManager.findOwnedVerity(player).orElse(null);
+        VerityTrustManager.setTrust(player, verity, value, TrustReason.DEBUG_SET);
+        source.sendSuccess(() -> Component.literal("Trust set. " + VerityTrustManager.statusText(player)), true);
+        return 1;
+    }
+
+    private static int trustAdd(CommandSourceStack source, ServerPlayer player, int amount) {
+        VerityEntity verity = VerityTrustManager.findOwnedVerity(player).orElse(null);
+        VerityTrustManager.addTrust(player, verity, amount, TrustReason.DEBUG_ADD);
+        source.sendSuccess(() -> Component.literal("Trust added. " + VerityTrustManager.statusText(player)), true);
+        return 1;
+    }
+
+    private static int trustReason(CommandSourceStack source, ServerPlayer player, String reasonName) {
+        try {
+            TrustReason reason = TrustReason.fromName(reasonName);
+            VerityEntity verity = VerityTrustManager.findOwnedVerity(player).orElse(null);
+            boolean ok = VerityTrustManager.addTrustDefault(player, verity, reason);
+            source.sendSuccess(() -> Component.literal((ok ? "Applied " : "Blocked ") + reason + ". "
+                    + VerityTrustManager.statusText(player)), true);
+            return ok ? 1 : 0;
+        } catch (IllegalArgumentException ex) {
+            source.sendFailure(Component.literal("Unknown reason: " + reasonName));
+            return 0;
+        }
+    }
+
+    private static int moodStatus(CommandSourceStack source, ServerPlayer player) {
+        source.sendSuccess(() -> Component.literal("Mood=" + VerityTrustManager.getMood(player)
+                + " trust=" + VerityTrustManager.getTrust(player)), false);
+        return 1;
+    }
+
+    private static int countdownStart(CommandSourceStack source, ServerPlayer player) {
+        VerityEntity verity = VerityTrustManager.findOwnedVerity(player).orElse(null);
+        VerityTrustManager.beginCountdown(player, verity);
+        source.sendSuccess(() -> Component.literal("Countdown started. " + VerityTrustManager.statusText(player)), true);
+        return 1;
+    }
+
+    private static int countdownStatus(CommandSourceStack source, ServerPlayer player) {
+        source.sendSuccess(() -> Component.literal(VerityTrustManager.statusText(player)), false);
+        return 1;
+    }
+
+    private static int countdownSkipDay(CommandSourceStack source, ServerPlayer player) {
+        var tag = VerityPlayerData.get(player);
+        if (!tag.getBoolean(VerityTrustKeys.COUNTDOWN_STARTED) || tag.getBoolean(VerityTrustKeys.TRANSFORMED)) {
+            source.sendFailure(Component.literal("No active countdown."));
+            return 0;
+        }
+        long start = tag.getLong(VerityTrustKeys.COUNTDOWN_START_GAME_TIME);
+        long transform = tag.getLong(VerityTrustKeys.TRANSFORM_GAME_TIME);
+        tag.putLong(VerityTrustKeys.COUNTDOWN_START_GAME_TIME, start - VerityTrustKeys.DAY_TICKS);
+        tag.putLong(VerityTrustKeys.TRANSFORM_GAME_TIME, transform - VerityTrustKeys.DAY_TICKS);
+        source.sendSuccess(() -> Component.literal("Skipped one countdown day. " + VerityTrustManager.statusText(player)), true);
+        return 1;
+    }
+
+    private static int countdownCancelDebug(CommandSourceStack source, ServerPlayer player) {
+        var tag = VerityPlayerData.get(player);
+        tag.putBoolean(VerityTrustKeys.COUNTDOWN_STARTED, false);
+        tag.putBoolean(VerityTrustKeys.WARNING_SEQUENCE_PLAYING, false);
+        tag.putLong(VerityTrustKeys.COUNTDOWN_START_GAME_TIME, 0);
+        tag.putLong(VerityTrustKeys.TRANSFORM_GAME_TIME, 0);
+        tag.putBoolean(VerityTrustKeys.TWO_DAY_LINE_PLAYED, false);
+        tag.putBoolean(VerityTrustKeys.ONE_DAY_LINE_PLAYED, false);
+        tag.putBoolean(VerityTrustKeys.STORY_MUTE_RANDOM, false);
+        source.sendSuccess(() -> Component.literal("DEBUG: countdown cancelled (story should not do this)."), true);
+        return 1;
+    }
+
+    private static int forceTransform(CommandSourceStack source, ServerPlayer player) {
+        VerityEntity verity = VerityTrustManager.findOwnedVerity(player).orElse(null);
+        VerityTrustManager.transformIntoMonster(player.serverLevel(), player, verity);
+        source.sendSuccess(() -> Component.literal("Transform forced. " + VerityTrustManager.statusText(player)), true);
+        return 1;
+    }
+
+    private static int resetStory(CommandSourceStack source, ServerPlayer player) {
+        VerityTrustManager.resetStory(player);
+        source.sendSuccess(() -> Component.literal("Story trust/countdown reset. " + VerityTrustManager.statusText(player)), true);
+        return 1;
     }
 
     private static int spawnIntro(CommandSourceStack source, ServerPlayer player) {
@@ -708,5 +902,124 @@ public final class VerityCommands {
 
     private static String format(Vec3 pos) {
         return String.format("%.2f %.2f %.2f", pos.x, pos.y, pos.z);
+    }
+
+    private static int voiceStatus(CommandSourceStack source, ServerPlayer player) {
+        source.sendSuccess(() -> Component.literal("Voice director: " + VerityVoiceDirector.statusFor(player)), false);
+        return 1;
+    }
+
+    private static int voiceQueue(CommandSourceStack source, ServerPlayer player) {
+        var lines = VerityVoiceDirector.queueSummary(player);
+        if (lines.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("Voice queue: empty"), false);
+        } else {
+            lines.forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
+        }
+        return 1;
+    }
+
+    private static int voiceClear(CommandSourceStack source, ServerPlayer player) {
+        VerityVoiceDirector.clearQueue(player, true);
+        source.sendSuccess(() -> Component.literal("Voice queue cleared for " + player.getGameProfile().getName()), true);
+        return 1;
+    }
+
+    private static int voicePlayEvent(CommandSourceStack source, ServerPlayer player, String eventId) {
+        VerityVoiceContext ctx = voiceContextFor(player);
+        boolean ok = VerityVoiceDirector.playEvent(player, eventId, ctx);
+        source.sendSuccess(() -> Component.literal(ok ? "Queued event " + eventId : "Failed to queue event " + eventId), true);
+        return ok ? 1 : 0;
+    }
+
+    private static int voicePlayRaw(CommandSourceStack source, ServerPlayer player, String soundId) {
+        if (VeritySounds.byId(soundId) == null || !VeritySounds.byId(soundId).isPresent()) {
+            source.sendFailure(Component.literal("Unknown registered Verity sound: " + soundId));
+            return 0;
+        }
+        VerityVoiceContext ctx = voiceContextFor(player);
+        boolean ok = VerityVoiceDirector.requestDirect(
+                player,
+                soundId,
+                VerityVoiceCategory.PLAYER_INTERACTION,
+                40,
+                VeritySounds.subtitleKeyFor(soundId),
+                VerityVoiceVariant.DEFAULT_VOLUME,
+                VerityVoiceVariant.DEFAULT_PITCH,
+                ctx
+        );
+        source.sendSuccess(() -> Component.literal(ok ? "Queued raw sound " + soundId : "Failed to queue " + soundId), true);
+        return ok ? 1 : 0;
+    }
+
+    private static int voiceContext(CommandSourceStack source, ServerPlayer player) {
+        source.sendSuccess(() -> Component.literal("Voice context: " + VerityVoiceDirector.contextSummary(player)), false);
+        return 1;
+    }
+
+    private static int voiceHistory(CommandSourceStack source, ServerPlayer player) {
+        VerityVoiceDirector.historySummary(player).forEach(line ->
+                source.sendSuccess(() -> Component.literal(line), false));
+        return 1;
+    }
+
+    private static int voiceMemories(CommandSourceStack source, ServerPlayer player) {
+        var lines = VerityVoiceDirector.memoriesSummary(player);
+        if (lines.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No persistent voice memories set."), false);
+        } else {
+            lines.forEach(line -> source.sendSuccess(() -> Component.literal(line), false));
+        }
+        return 1;
+    }
+
+    private static int voiceCooldowns(CommandSourceStack source, ServerPlayer player) {
+        VerityVoiceDirector.cooldownsSummary(player).forEach(line ->
+                source.sendSuccess(() -> Component.literal(line), false));
+        return 1;
+    }
+
+    private static int voiceDebug(CommandSourceStack source, ServerPlayer player, boolean enabled) {
+        VerityVoiceDirector.setDebugOverlay(player, enabled);
+        source.sendSuccess(() -> Component.literal("Voice debug overlay " + (enabled ? "enabled" : "disabled")), true);
+        return 1;
+    }
+
+    private static VerityVoiceContext voiceContextFor(ServerPlayer player) {
+        Optional<VerityEntity> verity = findVerity(player);
+        return verity.map(v -> VerityVoiceContext.atEntity(
+                player, v.getId(), v.getX(), v.getY(), v.getZ(), SoundSource.NEUTRAL, false
+        )).orElseGet(() -> VerityVoiceContext.atEntity(
+                player, -1, player.getX(), player.getY(), player.getZ(), SoundSource.NEUTRAL, false));
+    }
+
+    private static int voiceInterrupt(CommandSourceStack source, ServerPlayer player) {
+        VerityVoiceDirector.interrupt(player, VerityVoiceCategory.COUNTDOWN);
+        source.sendSuccess(() -> Component.literal("Voice interrupt sent for " + player.getGameProfile().getName()), true);
+        return 1;
+    }
+
+    private static int voicePlayPool(CommandSourceStack source, ServerPlayer player, String poolId) {
+        boolean ok = VerityVoiceDirector.requestPool(player, poolId, voiceContextFor(player));
+        source.sendSuccess(() -> Component.literal(ok ? "Queued pool " + poolId : "Failed to queue pool " + poolId), true);
+        return ok ? 1 : 0;
+    }
+
+    private static int voicePlayConversation(CommandSourceStack source, ServerPlayer player, String conversationId) {
+        boolean ok = VerityVoiceDirector.requestConversation(player, conversationId, voiceContextFor(player));
+        source.sendSuccess(() -> Component.literal(ok ? "Queued conversation " + conversationId
+                : "Failed to queue conversation " + conversationId), true);
+        return ok ? 1 : 0;
+    }
+
+    private static int voiceManifest(CommandSourceStack source) {
+        int pools = VerityVoiceManifest.get().pools().size();
+        int conversations = VerityVoiceManifest.get().conversations().size();
+        source.sendSuccess(() -> Component.literal("Voice manifest: pools=" + pools + " conversations=" + conversations), false);
+        VerityVoiceManifest.get().pools().keySet().stream().sorted().forEach(id ->
+                source.sendSuccess(() -> Component.literal("  pool: " + id), false));
+        VerityVoiceManifest.get().conversations().keySet().stream().sorted().forEach(id ->
+                source.sendSuccess(() -> Component.literal("  conversation: " + id), false));
+        return 1;
     }
 }

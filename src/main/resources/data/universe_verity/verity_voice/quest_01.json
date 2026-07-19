@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "pools": {
+    "quest_01_intro_ending": {
+      "category": "QUEST",
+      "variants": [
+        {
+          "id": "know_everything",
+          "sound": "verity.q01.intro.know_everything",
+          "duration_ticks": 36,
+          "subtitle": "subtitles.universe_verity.q01.intro.know_everything",
+          "weight": 85,
+          "volume": 0.92
+        },
+        {
+          "id": "almost_everything",
+          "sound": "verity.q01.intro.almost_everything",
+          "duration_ticks": 34,
+          "subtitle": "subtitles.universe_verity.q01.intro.almost_everything",
+          "weight": 12,
+          "volume": 0.92
+        },
+        {
+          "id": "everything_important",
+          "sound": "verity.q01.intro.everything_important",
+          "duration_ticks": 38,
+          "subtitle": "subtitles.universe_verity.q01.intro.everything_important",
+          "weight": 3,
+          "volume": 0.92,
+          "rare": true
+        }
+      ]
+    }
+  }
+}

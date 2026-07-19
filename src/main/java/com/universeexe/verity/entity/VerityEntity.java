@@ -1,12 +1,18 @@
 package com.universeexe.verity.entity;
 
 import com.universeexe.verity.animation.VerityExpressionState;
+import com.universeexe.verity.trust.MoodState;
 import com.universeexe.verity.config.VerityCommonConfig;
 import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.item.VerityItem;
 import com.universeexe.verity.registry.VerityItems;
 import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.util.VerityDebug;
+import com.universeexe.verity.voice.VerityQueuedVoiceEvent;
+import com.universeexe.verity.voice.VerityVoiceCategory;
+import com.universeexe.verity.voice.VerityVoiceContext;
+import com.universeexe.verity.voice.VerityVoiceDirector;
+import com.universeexe.verity.voice.VerityVoiceVariant;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -68,6 +74,9 @@ public class VerityEntity extends PathfinderMob {
      */
     private static final EntityDataAccessor<Boolean> DATA_WAS_THROWN =
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Server-authoritative mood for face rendering (trust system). */
+    private static final EntityDataAccessor<String> DATA_MOOD =
+            SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.STRING);
 
     private static final int GREETING_DURATION_TICKS = 128;
     /** Minimum ticks after throw before WasThrown may clear (prevents instant settle lock). */
@@ -114,6 +123,8 @@ public class VerityEntity extends PathfinderMob {
     /** Server-side sequenced voice lines (HELLO follow-up, etc.). */
     private final ArrayDeque<VoiceCue> voiceCueQueue = new ArrayDeque<>();
     private int voiceCueCooldownTicks;
+    /** True while the voice director owns an active line on this entity. */
+    private boolean voiceDirectorBusy;
 
     private record VoiceCue(net.minecraft.sounds.SoundEvent sound, int durationTicks, int pauseAfterTicks) {
     }
@@ -174,6 +185,15 @@ public class VerityEntity extends PathfinderMob {
         this.entityData.define(DATA_TALKING, false);
         this.entityData.define(DATA_FACE_VARIANT, "auto");
         this.entityData.define(DATA_WAS_THROWN, false);
+        this.entityData.define(DATA_MOOD, MoodState.MEH.name());
+    }
+
+    public void setMoodState(MoodState mood) {
+        this.entityData.set(DATA_MOOD, mood == null ? MoodState.MEH.name() : mood.name());
+    }
+
+    public MoodState getMoodState() {
+        return MoodState.fromName(this.entityData.get(DATA_MOOD));
     }
 
     public void setWasThrown(boolean thrown) {
@@ -191,14 +211,17 @@ public class VerityEntity extends PathfinderMob {
     public void beginPostReveal(ServerPlayer owner) {
         this.ownerUuid = owner.getUUID();
         this.revealCompleted = true;
-        this.pendingGreeting = VerityCommonConfig.ENABLE_GREETING.get();
+        this.pendingGreeting = false;
         this.greetingStarted = false;
         this.greetingCompleted = false;
-        // Brief settle delay, then personal-helper greeting (no "found the opening" line).
-        this.greetingStageTicks = -VerityCommonConfig.GREETING_DELAY_TICKS.get();
+        this.greetingStageTicks = 0;
         this.faceTicksRemaining = 12;
         this.targetYRot = yawToward(owner);
         setExpression(VerityExpressionState.GREETING);
+        com.universeexe.verity.trust.MoodState mood =
+                com.universeexe.verity.trust.VerityTrustManager.getMood(owner);
+        setMoodState(mood);
+        setFaceVariant(mood.legacyFaceVariant());
         triggerAnimation("reveal");
         triggerBounce();
     }
@@ -682,6 +705,7 @@ public class VerityEntity extends PathfinderMob {
                     net.minecraft.sounds.SoundEvents.ITEM_PICKUP,
                     net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.0f);
             if (player instanceof ServerPlayer serverPlayer) {
+                com.universeexe.verity.trust.VerityTrustEvents.onGentlePickup(serverPlayer, this);
                 VerityPlayerData.setVerityUuid(serverPlayer, null);
             }
             this.discard();
@@ -727,20 +751,34 @@ public class VerityEntity extends PathfinderMob {
                 boolean damaged = super.hurt(source, amount);
                 if (damaged && !this.level().isClientSide) {
                     applyHurtFace();
+                    notifyTrustHit(source);
                 }
                 return damaged;
             }
             // Protected: still flash hurt face on player hits so he isn't expression-stuck.
             if (!this.level().isClientSide && source.getEntity() instanceof Player) {
                 applyHurtFace();
+                notifyTrustHit(source);
             }
             return false;
         }
         boolean damaged = super.hurt(source, amount);
         if (damaged && !this.level().isClientSide) {
             applyHurtFace();
+            notifyTrustHit(source);
         }
         return damaged;
+    }
+
+    private void notifyTrustHit(DamageSource source) {
+        if (!(source.getEntity() instanceof ServerPlayer attacker)) {
+            return;
+        }
+        if (ownerUuid == null || !ownerUuid.equals(attacker.getUUID())) {
+            return;
+        }
+        com.universeexe.verity.trust.VerityTrustManager.addTrustDefault(
+                attacker, this, com.universeexe.verity.trust.TrustReason.HIT_VERITY);
     }
 
     @Override
@@ -872,28 +910,39 @@ public class VerityEntity extends PathfinderMob {
         enqueueVoiceCue(sound, durationTicks, 0);
     }
 
+    public void prepareForQuestGreeting() {
+        if (this.level().isClientSide) {
+            return;
+        }
+        this.faceTicksRemaining = 40;
+        setExpression(VerityExpressionState.HAPPY);
+        setFaceVariant("happy");
+        triggerAnimation("greeting");
+        setTalking(true);
+    }
+
     /**
-     * HELLO_VERITY response: server picks A/B 50/50 (synced via playSound), then optional one-time whisper pair.
+     * HELLO_VERITY response routed through Quest 2 voice director pools/conversations.
      */
     public void playHelloVoiceResponse(boolean includeWhisperFollowup) {
         if (this.level().isClientSide) {
             return;
         }
-        clearVoiceCueQueue();
-        boolean pickHoping = this.random.nextBoolean();
-        net.minecraft.sounds.SoundEvent main = pickHoping
-                ? VeritySounds.VOICE_HELLO_HOPING_YOU_WOULD_TALK.get()
-                : VeritySounds.VOICE_HELLO_AGAIN.get();
-        int mainDur = pickHoping ? DUR_HELLO_HOPING : DUR_HELLO_AGAIN;
-        if (includeWhisperFollowup) {
-            enqueueVoiceCue(main, mainDur, HELLO_GAP_AFTER_MAIN_TICKS);
-            enqueueVoiceCue(VeritySounds.VOICE_YOUR_VOICE_SOUNDS_EXACTLY.get(),
-                    DUR_YOUR_VOICE_SOUNDS_EXACTLY, HELLO_WHISPER_PAUSE_TICKS);
-            enqueueVoiceCue(VeritySounds.VOICE_I_MEAN_IMAGINED_IT.get(), DUR_I_MEAN_IMAGINED_IT, 0);
-        } else {
-            enqueueVoiceCue(main, mainDur, 0);
+        ServerPlayer owner = findOwner();
+        if (owner == null) {
+            return;
         }
-        VerityDebug.log("Hello voice response from {} (whisperFollowup={})", this.getUUID(), includeWhisperFollowup);
+        clearVoiceCueQueue();
+        com.universeexe.verity.quest.VerityQuestManager.handleHelloIntent(owner, this, "hello");
+        VerityDebug.log("Hello voice response from {}", this.getUUID());
+    }
+
+    public boolean isVoiceDirectorBusy() {
+        return voiceDirectorBusy;
+    }
+
+    public void setVoiceDirectorBusy(boolean voiceDirectorBusy) {
+        this.voiceDirectorBusy = voiceDirectorBusy;
     }
 
     public void clearVoiceCueQueue() {
@@ -906,38 +955,69 @@ public class VerityEntity extends PathfinderMob {
             return;
         }
         voiceCueQueue.addLast(new VoiceCue(sound, Math.max(1, durationTicks), Math.max(0, pauseAfterTicks)));
-        if (voiceCueCooldownTicks <= 0) {
-            playNextVoiceCue();
-        }
+        tryFlushVoiceCueQueue();
     }
 
     private void tickVoiceCueQueue() {
-        if (voiceCueCooldownTicks <= 0) {
+        if (voiceCueQueue.isEmpty()) {
             return;
         }
-        voiceCueCooldownTicks--;
-        if (voiceCueCooldownTicks == 0) {
-            playNextVoiceCue();
+        ServerPlayer owner = findOwner();
+        if (owner == null) {
+            return;
+        }
+        if (!VerityVoiceDirector.isPlayerBusy(owner.getUUID()) && voiceCueCooldownTicks <= 0) {
+            tryFlushVoiceCueQueue();
+        }
+        if (voiceCueCooldownTicks > 0) {
+            voiceCueCooldownTicks--;
         }
     }
 
-    private void playNextVoiceCue() {
-        VoiceCue cue = voiceCueQueue.pollFirst();
-        if (cue == null) {
+    private void tryFlushVoiceCueQueue() {
+        if (voiceCueQueue.isEmpty() || this.level().isClientSide) {
             return;
         }
-        this.level().playSound(
-                null,
+        ServerPlayer owner = findOwner();
+        if (owner == null || VerityVoiceDirector.isPlayerBusy(owner.getUUID())) {
+            return;
+        }
+        VerityQueuedVoiceEvent.Builder builder = VerityQueuedVoiceEvent.builder(
+                "entity_cues",
+                VerityVoiceCategory.PLAYER_INTERACTION,
+                voiceContextForOwner(owner)
+        );
+        VoiceCue cue;
+        while ((cue = voiceCueQueue.pollFirst()) != null) {
+            String soundId = VeritySounds.resolveId(cue.sound());
+            if (soundId == null) {
+                continue;
+            }
+            builder.add(
+                    VerityVoiceVariant.simple(
+                            soundId,
+                            soundId,
+                            cue.durationTicks(),
+                            VeritySounds.subtitleKeyFor(soundId),
+                            0.95f,
+                            1.0f
+                    ),
+                    cue.pauseAfterTicks()
+            );
+        }
+        VerityVoiceDirector.requestEvent(owner, builder.build());
+    }
+
+    private VerityVoiceContext voiceContextForOwner(ServerPlayer owner) {
+        return VerityVoiceContext.atEntity(
+                owner,
+                getId(),
                 getX(),
                 getY(),
                 getZ(),
-                cue.sound(),
                 SoundSource.NEUTRAL,
-                0.95f,
-                1.0f
+                false
         );
-        beginTalkingForTicks(cue.durationTicks());
-        voiceCueCooldownTicks = cue.durationTicks() + cue.pauseAfterTicks();
     }
 
     /**

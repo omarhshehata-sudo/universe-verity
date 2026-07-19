@@ -1,37 +1,46 @@
 package com.universeexe.verity.entity;
 
 import com.universeexe.verity.config.VerityCommonConfig;
+import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.registry.VeritySounds;
-import net.minecraft.sounds.SoundEvent;
+import com.universeexe.verity.voice.VerityVoiceCategory;
+import com.universeexe.verity.voice.VerityVoiceContext;
+import com.universeexe.verity.voice.VerityVoiceDirector;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.sounds.SoundEvent;
 
 /**
- * Server-authoritative sealed-box introduction timeline.
- * Timeline ticks advance only while no voice line is playing (20 ticks = 1 second).
- * Movement/shake SFX are silenced; visual agitation + voice lines remain.
- *
- * Fixed voice order while sealed:
- * 1 Hellooo → 2 Is someone out there → 3 I can hear you moving → 4 Could you open this
- * → (longer delay) 5 Please → (very long delay) 6 You're still there
- * Open handoff (Verity entity): brief settle → personal-helper greeting.
+ * Server-authoritative sealed-box waiting dialogue for Quest 1.
+ * Advances only while the owner is within {@link #ACTIVATION_RANGE} blocks and no line is playing.
  */
 public final class VerityBoxSequence {
-    /** Initial quiet before first sealed line. */
-    public static final int TICK_FIRST_CALL = 40; // 2.0s
+    public static final int ACTIVATION_RANGE = 8;
 
-    // Approximate voice durations in ticks + small tail buffer (busy gate).
-    public static final int DUR_HELLOOO = 26;
-    public static final int DUR_IS_SOMEONE_OUT_THERE = 32;
-    public static final int DUR_I_CAN_HEAR_YOU_MOVING = 30;
-    public static final int DUR_COULD_YOU_OPEN_THIS = 26;
+    public static final int TICK_FIRST_CALL = 40;
+    public static final int DUR_HELLO = 26;
+    public static final int DUR_ANYONE_THERE = 32;
+    public static final int DUR_HEAR_MOVING = 30;
+    public static final int DUR_OPEN_REQUEST = 26;
     public static final int DUR_PLEASE = 17;
-    public static final int DUR_YOURE_STILL_THERE = 51;
-    /** Clean open-line duration before post-reveal greeting delay. */
-    public static final int DUR_OH_YOU_FOUND_THE_OPENING = 45;
-
+    public static final int DUR_STILL_THERE = 51;
+    public static final int DUR_OPEN_MYSELF = 40;
     /** Legacy alias used by skip-intro helpers. */
     public static final int TICK_IDLE = 0;
+    /** Clean reveal line duration. */
+    public static final int DUR_OH_YOU_FOUND_THE_OPENING = 45;
+
+    public static final int LINE_HELLO = 1;
+    public static final int LINE_ANYONE = 2;
+    public static final int LINE_HEAR_MOVING = 4;
+    public static final int LINE_OPEN_REQUEST = 8;
+    public static final int LINE_PLEASE = 16;
+    public static final int RARE_STILL_01 = 32;
+    public static final int RARE_STILL_02 = 64;
+    public static final int RARE_OPEN_MYSELF_01 = 128;
+    public static final int RARE_OPEN_MYSELF_02 = 256;
 
     private VerityBoxSequence() {
     }
@@ -46,9 +55,15 @@ public final class VerityBoxSequence {
         if (box.isIntroCompleted() || box.getRevealStage() != VerityRevealStage.SEALED) {
             return;
         }
-
-        // Pause the timeline while a voice line plays so timed events are never skipped.
+        if (box.isWaitingDialogueStopped()) {
+            return;
+        }
         if (box.isVoiceBusy()) {
+            return;
+        }
+
+        ServerPlayer owner = box.findOwner();
+        if (owner == null || owner.distanceTo(box) > ACTIVATION_RANGE) {
             return;
         }
 
@@ -63,15 +78,38 @@ public final class VerityBoxSequence {
         int pleaseDelay = VerityCommonConfig.BOX_PLEASE_DELAY_TICKS.get();
         int stillThereDelay = VerityCommonConfig.BOX_STILL_THERE_DELAY_TICKS.get();
 
-        int tick1 = TICK_FIRST_CALL;
-        int tick2 = tick1 + 1 + pauseBetween;
-        int tick3 = tick2 + 1 + pauseBetween;
-        int tick4 = tick3 + 1 + pauseBetween;
-        int tickPlease = tick4 + 1 + pleaseDelay;
-        int tickStillThere = tickPlease + 1 + stillThereDelay;
-        int tickIdle = tickStillThere + 1;
+        scheduleAgitation(box, t, pauseBetween, pleaseDelay, stillThereDelay);
+        tryPlayNextLine(box, owner, t, pauseBetween, pleaseDelay, stillThereDelay);
 
-        // Light visual agitation between lines (no shake SFX).
+        if (box.isIntroCompleted()) {
+            box.setIntroStage(VerityBoxStage.IDLE_CALLING);
+            box.resetIdleCooldown();
+        }
+    }
+
+    public static void stopWaitingDialogue(VerityBoxEntity box, ServerPlayer owner) {
+        box.setWaitingDialogueStopped(true);
+        box.setVoiceBusyTicks(0);
+        if (owner != null) {
+            VerityVoiceDirector.interrupt(owner, VerityVoiceCategory.QUEST);
+            VerityVoiceDirector.interrupt(owner, VerityVoiceCategory.BOX_INTRO);
+        }
+    }
+
+    private static void scheduleAgitation(
+            VerityBoxEntity box,
+            int t,
+            int pauseBetween,
+            int pleaseDelay,
+            int stillThereDelay
+    ) {
+        int tick1 = TICK_FIRST_CALL;
+        int tick2 = tick1 + DUR_HELLO + pauseBetween;
+        int tick3 = tick2 + DUR_ANYONE_THERE + pauseBetween;
+        int tick4 = tick3 + DUR_HEAR_MOVING + pauseBetween;
+        int tickPlease = tick4 + DUR_OPEN_REQUEST + pleaseDelay;
+        int tickRare = tickPlease + DUR_PLEASE + stillThereDelay;
+
         if (t == tick1 - 12) {
             box.setIntroStage(VerityBoxStage.FIRST_MOVEMENT);
             box.triggerAnimation("rustle_small", true);
@@ -84,51 +122,143 @@ public final class VerityBoxSequence {
             box.triggerAnimation("shake", true);
         } else if (t == tickPlease - 14) {
             box.triggerAnimation("rustle_small", true);
-        } else if (t == tickStillThere - 16) {
+        } else if (t == tickRare - 16) {
             box.triggerAnimation("shake", true);
         }
+    }
 
-        if (t == tick1) {
-            box.setIntroStage(VerityBoxStage.FIRST_CALL);
-            speak(box, VeritySounds.BOX_HELLOOO, DUR_HELLOOO, "hellooo");
-        } else if (t == tick2) {
-            box.setIntroStage(VerityBoxStage.SECOND_CALL);
-            speak(box, VeritySounds.BOX_IS_SOMEONE_OUT_THERE, DUR_IS_SOMEONE_OUT_THERE, "is_someone_out_there");
-        } else if (t == tick3) {
-            box.setIntroStage(VerityBoxStage.THIRD_CALL);
-            speak(box, VeritySounds.BOX_I_CAN_HEAR_YOU_MOVING, DUR_I_CAN_HEAR_YOU_MOVING, "i_can_hear_you_moving");
-        } else if (t == tick4) {
-            box.setIntroStage(VerityBoxStage.FOURTH_CALL);
-            speak(box, VeritySounds.BOX_COULD_YOU_OPEN_THIS, DUR_COULD_YOU_OPEN_THIS, "could_you_open_this");
-        } else if (t == tickPlease) {
-            box.setIntroStage(VerityBoxStage.FIFTH_CALL);
-            speak(box, VeritySounds.BOX_PLEASE, DUR_PLEASE, "please");
-        } else if (t == tickStillThere) {
-            box.setIntroStage(VerityBoxStage.IDLE_CALLING);
-            speak(box, VeritySounds.BOX_YOURE_STILL_THERE, DUR_YOURE_STILL_THERE, "youre_still_there");
+    private static void tryPlayNextLine(
+            VerityBoxEntity box,
+            ServerPlayer owner,
+            int t,
+            int pauseBetween,
+            int pleaseDelay,
+            int stillThereDelay
+    ) {
+        int tick1 = TICK_FIRST_CALL;
+        int tick2 = tick1 + DUR_HELLO + pauseBetween;
+        int tick3 = tick2 + DUR_ANYONE_THERE + pauseBetween;
+        int tick4 = tick3 + DUR_HEAR_MOVING + pauseBetween;
+        int tickPlease = tick4 + DUR_OPEN_REQUEST + pleaseDelay;
+        int tickRare = tickPlease + DUR_PLEASE + stillThereDelay;
+
+        if (t == tick1 && tryMainLine(box, owner, LINE_HELLO, VeritySounds.Q01_BOX_HELLO, DUR_HELLO, "hello")) {
+            return;
         }
-
-        if (t >= tickIdle && !box.isIntroCompleted()) {
-            box.setIntroStage(VerityBoxStage.IDLE_CALLING);
+        if (t == tick2 && tryMainLine(box, owner, LINE_ANYONE, VeritySounds.Q01_BOX_ANYONE_THERE, DUR_ANYONE_THERE, "anyone_there")) {
+            return;
+        }
+        if (t == tick3 && tryMainLine(box, owner, LINE_HEAR_MOVING, VeritySounds.Q01_BOX_HEAR_MOVING, DUR_HEAR_MOVING, "hear_moving")) {
+            return;
+        }
+        if (t == tick4 && tryMainLine(box, owner, LINE_OPEN_REQUEST, VeritySounds.Q01_BOX_OPEN_REQUEST, DUR_OPEN_REQUEST, "open_request")) {
+            return;
+        }
+        if (t == tickPlease && tryMainLine(box, owner, LINE_PLEASE, VeritySounds.Q01_BOX_PLEASE, DUR_PLEASE, "please")) {
+            return;
+        }
+        if (t >= tickRare && !box.isIntroCompleted()) {
+            if (tryRareLine(box, owner)) {
+                return;
+            }
             box.setIntroCompleted(true);
-            box.resetIdleCooldown();
         }
     }
 
-    private static void speak(VerityBoxEntity box, RegistryObject<SoundEvent> sound, int busyTicks, String id) {
+    private static boolean tryMainLine(
+            VerityBoxEntity box,
+            ServerPlayer owner,
+            int bit,
+            RegistryObject<SoundEvent> sound,
+            int busyTicks,
+            String id
+    ) {
+        if (VerityPlayerData.hasQ1BoxLinePlayed(owner, bit)) {
+            return false;
+        }
+        if (speak(box, owner, sound, busyTicks, id)) {
+            VerityPlayerData.markQ1BoxLinePlayed(owner, bit);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean tryRareLine(VerityBoxEntity box, ServerPlayer owner) {
+        int roll = box.nextBoxRandomInt(100);
+        if (roll >= 18) {
+            return false;
+        }
+        int choice = box.nextBoxRandomInt(4);
+        return switch (choice) {
+            case 0 -> tryRarePair(box, owner, RARE_STILL_01, VeritySounds.Q01_BOX_STILL_THERE_01, DUR_STILL_THERE, "still_there_01");
+            case 1 -> tryRarePair(box, owner, RARE_STILL_02, VeritySounds.Q01_BOX_STILL_THERE_02, DUR_STILL_THERE, "still_there_02");
+            case 2 -> tryRarePair(box, owner, RARE_OPEN_MYSELF_01, VeritySounds.Q01_BOX_OPEN_MYSELF_01, DUR_OPEN_MYSELF, "open_myself_01");
+            default -> tryRarePair(box, owner, RARE_OPEN_MYSELF_02, VeritySounds.Q01_BOX_OPEN_MYSELF_02, DUR_OPEN_MYSELF, "open_myself_02");
+        };
+    }
+
+    private static boolean tryRarePair(
+            VerityBoxEntity box,
+            ServerPlayer owner,
+            int bit,
+            RegistryObject<SoundEvent> sound,
+            int busyTicks,
+            String id
+    ) {
+        if (VerityPlayerData.hasQ1RarePairPlayed(owner, bit)) {
+            return false;
+        }
+        if (speak(box, owner, sound, busyTicks, id)) {
+            VerityPlayerData.markQ1RarePairPlayed(owner, bit);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean speak(
+            VerityBoxEntity box,
+            ServerPlayer owner,
+            RegistryObject<SoundEvent> sound,
+            int busyTicks,
+            String id
+    ) {
         if (!VerityCommonConfig.ENABLE_VOICE_LINES.get()) {
-            return;
+            return true;
         }
-        playVoice(box, sound, 0.82f, 0.98f);
-        box.setVoiceBusyTicks(busyTicks);
-        box.setLastVoiceLine(id);
-    }
-
-    private static void playVoice(VerityBoxEntity box, RegistryObject<SoundEvent> sound, float volume, float pitch) {
-        if (sound == null || sound.get() == null || box.level().isClientSide) {
-            return;
+        if (!(box.level() instanceof ServerLevel) || box.level().isClientSide) {
+            return false;
         }
-        float vol = Math.min(0.95f, Math.max(0.05f, volume));
-        box.level().playSound(null, box.getX(), box.getY(), box.getZ(), sound.get(), SoundSource.BLOCKS, vol, pitch);
+        if (sound == null || !sound.isPresent()) {
+            return false;
+        }
+        String soundId = VeritySounds.resolveId(sound.get());
+        if (soundId == null) {
+            return false;
+        }
+        VerityVoiceContext ctx = VerityVoiceContext.atEntity(
+                owner,
+                box.getId(),
+                box.getX(),
+                box.getY(),
+                box.getZ(),
+                SoundSource.BLOCKS,
+                true
+        );
+        String subtitle = VeritySounds.subtitleKeyFor(soundId);
+        if (VerityVoiceDirector.requestDirect(
+                owner,
+                soundId,
+                VerityVoiceCategory.BOX_INTRO,
+                busyTicks,
+                subtitle,
+                0.82f,
+                0.98f,
+                ctx
+        )) {
+            box.setVoiceBusyTicks(busyTicks);
+            box.setLastVoiceLine(id);
+            return true;
+        }
+        return false;
     }
 }
