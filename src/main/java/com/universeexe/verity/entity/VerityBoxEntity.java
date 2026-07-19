@@ -5,6 +5,8 @@ import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.util.VerityDebug;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -43,6 +45,13 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
     private static final EntityDataAccessor<Integer> DATA_ANIM_TOKEN =
             SynchedEntityData.defineId(VerityBoxEntity.class, EntityDataSerializers.INT);
 
+    /** verity-5.7.3 JAR: spawn + box_open + discard at tick 40 from click. */
+    public static final int JAR_SPAWN_TICK = 40;
+    /** JAR scheduled impacts from click (also at +15/+35/+50 from spawn). */
+    public static final int JAR_IMPACT_1_TICK = 55;
+    public static final int JAR_IMPACT_0_TICK = 75;
+    public static final int JAR_IMPACT_2_TICK = 90;
+
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     @Nullable
@@ -65,6 +74,13 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
     private String clientPlayingAnim = "idle";
     private boolean revealReactPlayed;
     private boolean revealOpenPlayed;
+    private boolean revealSpawnHandled;
+    private boolean revealImpact1Played;
+    private boolean revealImpact0Played;
+    private boolean revealImpact2Played;
+    @Nullable
+    private UUID spawnedVerityUuid;
+    /** Prevents muffled waiting lines from overlapping the reveal click. */
     private boolean waitingDialogueStopped;
     /** Server-side lock so one-shots finish before the next trigger (stops mid-shake restarts). */
     private int animLockTicks;
@@ -182,6 +198,11 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         introCompleted = true;
         revealReactPlayed = false;
         revealOpenPlayed = false;
+        revealSpawnHandled = false;
+        revealImpact1Played = false;
+        revealImpact0Played = false;
+        revealImpact2Played = false;
+        spawnedVerityUuid = null;
         revealTicks = 0;
         knockFollowupTicks = 0;
         voiceBusyTicks = 0;
@@ -196,37 +217,73 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         revealTicks++;
         int spawnAt = VerityCommonConfig.VERITY_SPAWN_TICK.get();
         int removeAt = VerityCommonConfig.BOX_REMOVAL_TICK.get();
-        int openAt = 20;
 
         if (revealStage == VerityRevealStage.REVEAL_STARTING && revealTicks >= 1) {
-            setRevealStage(VerityRevealStage.BOX_REACTING);
-        }
-        if (revealStage == VerityRevealStage.BOX_REACTING && revealTicks >= 8 && !revealReactPlayed) {
-            revealReactPlayed = true;
-            playMovement(VeritySounds.REVEAL_MOVEMENT.get(), 0.50f, 1.0f, 12);
-            triggerAnimation("rustle_small", true);
             setRevealStage(VerityRevealStage.BOX_OPENING);
         }
-        // One-shot only — previously this fired every tick and caused the glitch spam.
-        if (revealStage == VerityRevealStage.BOX_OPENING && revealTicks >= openAt && !revealOpenPlayed) {
-            revealOpenPlayed = true;
-            playMovement(VeritySounds.REVEAL_BOX_OPEN.get(), 0.62f, 1.0f, 20);
-            triggerAnimation("open", true);
-        }
-        if (revealStage == VerityRevealStage.BOX_OPENING && revealTicks >= spawnAt) {
+        if (revealStage == VerityRevealStage.BOX_OPENING && revealTicks >= spawnAt && !revealSpawnHandled) {
+            revealSpawnHandled = true;
             setRevealStage(VerityRevealStage.VERITY_SPAWNING);
             if (!spawnVerity()) {
                 setRevealStage(VerityRevealStage.ERROR_RECOVERY);
                 revealOpenPlayed = false;
+                revealSpawnHandled = false;
                 revealReactPlayed = false;
                 VerityDebug.warn("Verity spawn failed for box {}", this.getUUID());
                 return;
             }
+            if (!revealOpenPlayed) {
+                revealOpenPlayed = true;
+                playMovement(VeritySounds.REVEAL_BOX_OPEN.get(), 1.0f, 1.0f, 24);
+            }
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(
+                        ParticleTypes.POOF,
+                        this.getX(),
+                        this.getY() + 1.0D,
+                        this.getZ(),
+                        20,
+                        0.25D,
+                        0.25D,
+                        0.25D,
+                        0.02D
+                );
+            }
         }
+        playScheduledRevealImpacts();
         if (revealStage == VerityRevealStage.VERITY_SPAWNING && revealTicks >= removeAt) {
             setRevealStage(VerityRevealStage.REVEAL_COMPLETE);
             this.discard();
         }
+    }
+
+    /** JAR ModEvents: impact_1 @55, impact_0 @75, impact_2 @90 from box click. */
+    private void playScheduledRevealImpacts() {
+        VerityEntity verity = findSpawnedVerity();
+        if (verity == null) {
+            return;
+        }
+        if (!revealImpact1Played && revealTicks >= JAR_IMPACT_1_TICK) {
+            revealImpact1Played = true;
+            verity.playRevealImpact(VeritySounds.REVEAL_IMPACT_1.get());
+        }
+        if (!revealImpact0Played && revealTicks >= JAR_IMPACT_0_TICK) {
+            revealImpact0Played = true;
+            verity.playRevealImpact(VeritySounds.REVEAL_IMPACT_0.get());
+        }
+        if (!revealImpact2Played && revealTicks >= JAR_IMPACT_2_TICK) {
+            revealImpact2Played = true;
+            verity.playRevealImpact(VeritySounds.REVEAL_IMPACT_2.get());
+        }
+    }
+
+    @Nullable
+    private VerityEntity findSpawnedVerity() {
+        if (spawnedVerityUuid == null || !(this.level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        Entity entity = serverLevel.getEntity(spawnedVerityUuid);
+        return entity instanceof VerityEntity verity ? verity : null;
     }
 
     private boolean spawnVerity() {
@@ -254,8 +311,14 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         if (verity == null) {
             return false;
         }
-        verity.moveTo(this.getX(), this.getY() + VerityEntity.INTRO_SPAWN_Y_ABOVE_BOX, this.getZ(),
-                this.getYRot(), 0);
+        BlockPos spawnPos = this.blockPosition();
+        verity.moveTo(
+                spawnPos.getX() + 0.5D,
+                spawnPos.getY(),
+                spawnPos.getZ() + 0.5D,
+                this.getYRot(),
+                0.0F
+        );
         verity.setOwnerUUID(this.ownerUuid);
         verity.setYBodyRot(this.getYRot());
         verity.setYHeadRot(this.getYRot());
@@ -265,6 +328,7 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         VerityPlayerData.markRevealComplete(owner, verity.getUUID());
         VerityPlayerData.setGreetingPlayed(owner, false);
         VerityPlayerData.setGreetingCompleted(owner, false);
+        spawnedVerityUuid = verity.getUUID();
         verity.beginPostReveal(owner);
         VerityDebug.log("Spawned Verity {} for {}", verity.getUUID(), owner.getGameProfile().getName());
         return true;
@@ -301,10 +365,15 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         idleCooldown = 0;
         revealReactPlayed = false;
         revealOpenPlayed = false;
+        revealSpawnHandled = false;
+        revealImpact1Played = false;
+        revealImpact0Played = false;
+        revealImpact2Played = false;
+        spawnedVerityUuid = null;
         setRevealStage(VerityRevealStage.REVEAL_STARTING);
         revealTicks = 0;
-        playMovement(VeritySounds.BOX_RUSTLE_2.get(), 0.45f, 1.02f, 12);
-        triggerAnimation("interaction_reaction", true);
+        playMovement(VeritySounds.BOX_CLICK.get(), 0.7f, 1.0f, 16);
+        triggerAnimation("open", true);
         player.displayClientMessage(Component.translatable("message.universe_verity.reveal_started"), true);
         VerityDebug.log("Reveal started for {} on box {}", player.getGameProfile().getName(), this.getUUID());
         return true;

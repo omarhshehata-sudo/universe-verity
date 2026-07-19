@@ -105,7 +105,11 @@ public final class VeritySounds {
     public static final RegistryObject<SoundEvent> BOX_KNOCK_2 = register("verity.box.knock_2");
     public static final RegistryObject<SoundEvent> BOX_SHIFT = register("verity.box.shift");
     public static final RegistryObject<SoundEvent> BOX_THUMP = register("verity.box.thump");
+    public static final RegistryObject<SoundEvent> BOX_CLICK = register("verity.box.click");
     public static final RegistryObject<SoundEvent> REVEAL_BOX_OPEN = register("verity.reveal.box_open");
+    public static final RegistryObject<SoundEvent> REVEAL_IMPACT_0 = register("verity.reveal.impact_0");
+    public static final RegistryObject<SoundEvent> REVEAL_IMPACT_1 = register("verity.reveal.impact_1");
+    public static final RegistryObject<SoundEvent> REVEAL_IMPACT_2 = register("verity.reveal.impact_2");
     public static final RegistryObject<SoundEvent> REVEAL_MOVEMENT = register("verity.reveal.movement");
     public static final RegistryObject<SoundEvent> GREETING_PERSONAL_HELPER = register("verity.greeting.personal_helper");
     public static final RegistryObject<SoundEvent> VOICE_OKAY_WHERE_ARE_WE_GOING = register("verity.voice.okay_where_are_we_going");
@@ -225,7 +229,11 @@ public final class VeritySounds {
                 "verity.box.knock_2", BOX_KNOCK_2,
                 "verity.box.shift", BOX_SHIFT,
                 "verity.box.thump", BOX_THUMP,
+                "verity.box.click", BOX_CLICK,
                 "verity.reveal.box_open", REVEAL_BOX_OPEN,
+                "verity.reveal.impact_0", REVEAL_IMPACT_0,
+                "verity.reveal.impact_1", REVEAL_IMPACT_1,
+                "verity.reveal.impact_2", REVEAL_IMPACT_2,
                 "verity.reveal.movement", REVEAL_MOVEMENT,
                 "verity.greeting.personal_helper", GREETING_PERSONAL_HELPER,
                 "verity.voice.okay_where_are_we_going", VOICE_OKAY_WHERE_ARE_WE_GOING,
@@ -294,11 +302,30 @@ public final class VeritySounds {
         return null;
     }
 
-    public static String subtitleKeyFor(String soundId) {
-        if (soundId == null || !soundId.startsWith("verity.")) {
+    /** Full mod sound id from a {@link ResourceLocation} (e.g. {@code verity.greeting.personal_helper}). */
+    @javax.annotation.Nullable
+    public static String resolveSoundId(ResourceLocation location) {
+        if (location == null || !UniverseVerity.MOD_ID.equals(location.getNamespace())) {
+            return null;
+        }
+        return normalizeSoundId(location.getPath());
+    }
+
+    /** Accepts {@code verity.foo.bar} or {@code foo.bar}. */
+    public static String normalizeSoundId(@javax.annotation.Nullable String soundId) {
+        if (soundId == null || soundId.isBlank()) {
             return "";
         }
-        String suffix = soundId.substring("verity.".length());
+        String trimmed = soundId.trim();
+        return trimmed.startsWith("verity.") ? trimmed : "verity." + trimmed;
+    }
+
+    public static String subtitleKeyFor(String soundId) {
+        String full = normalizeSoundId(soundId);
+        if (full.isEmpty()) {
+            return "";
+        }
+        String suffix = full.substring("verity.".length());
         if (suffix.startsWith("voice.")) {
             return "subtitles.universe_verity.verity." + suffix.substring("voice.".length());
         }

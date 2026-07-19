@@ -84,8 +84,8 @@ public final class VerityCommonConfig {
         REVEAL_REQUIRES_EMPTY_HAND = builder.define("revealRequiresEmptyHand", false);
         REVEAL_DELAY_TICKS = builder.defineInRange("revealDelayTicks", 0, 0, 100);
         BOX_OPENING_DURATION_TICKS = builder.defineInRange("boxOpeningDurationTicks", 40, 1, 200);
-        VERITY_SPAWN_TICK = builder.defineInRange("veritySpawnTick", 52, 1, 200);
-        BOX_REMOVAL_TICK = builder.defineInRange("boxRemovalTick", 64, 1, 250);
+        VERITY_SPAWN_TICK = builder.defineInRange("veritySpawnTick", 40, 1, 200);
+        BOX_REMOVAL_TICK = builder.defineInRange("boxRemovalTick", 40, 1, 250);
         // Legacy delay used when open-found line is disabled / skipped.
         GREETING_DELAY_TICKS = builder.defineInRange("greetingDelayTicks", 20, 0, 200);
         // Pause after "Oh! You found the opening" before the personal-helper greeting.

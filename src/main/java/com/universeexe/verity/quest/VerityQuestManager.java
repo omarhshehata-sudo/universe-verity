@@ -1,7 +1,11 @@
 package com.universeexe.verity.quest;
 
+import com.universeexe.verity.UniverseVerity;
 import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.entity.VerityEntity;
+import com.universeexe.verity.network.PlayVoicePacket;
+import com.universeexe.verity.network.VerityNetwork;
+import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.trust.TrustReason;
 import com.universeexe.verity.trust.VerityTrustEvents;
 import com.universeexe.verity.trust.VerityTrustManager;
@@ -17,6 +21,7 @@ import com.universeexe.verity.voice.VerityVoiceSnapshot;
 import com.universeexe.verity.voice.VerityVoiceVariant;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -57,17 +62,19 @@ public final class VerityQuestManager {
             VerityDebug.warn("Quest 1 intro skipped — Verity missing for {}", player.getGameProfile().getName());
             return;
         }
-        VerityVoiceDirector.clearQueue(player, true);
+        VerityVoiceDirector.clearQueue(player, false);
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, true)
-                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80));
+                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80))
+                .withOnComplete(() -> completeQuest1(player, verity));
         VerityQueuedVoiceEvent event = buildQuest1IntroEvent(player, verity, ctx, () -> completeQuest1(player, verity));
 
-        if (!VerityVoiceDirector.requestEvent(player, event)) {
-            VerityDebug.warn("Quest 1 intro voice queue failed; retrying direct fallback for {}",
-                    player.getGameProfile().getName());
-            playQuest1IntroDirectFallback(player, verity, ctx);
+        if (VerityVoiceDirector.requestEvent(player, event)) {
+            return;
         }
+        VerityDebug.warn("Quest 1 intro voice queue failed; retrying direct fallback for {}",
+                player.getGameProfile().getName());
+        playQuest1IntroDirectFallback(player, verity, ctx);
     }
 
     private static VerityQueuedVoiceEvent buildQuest1IntroEvent(
@@ -112,11 +119,65 @@ public final class VerityQuestManager {
                 com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(greetingId),
                 0.92f,
                 1.0f,
-                ctx.withOnComplete(() -> completeQuest1(player, verity))
+                ctx
         )) {
             return;
         }
-        completeQuest1(player, verity);
+        playGreetingHardFallback(player, verity, ctx, greetingId);
+    }
+
+    /**
+     * Last-resort greeting — must never fail silently. Plays OGG on server + sends PlayVoicePacket for subtitles.
+     */
+    private static void playGreetingHardFallback(
+            ServerPlayer player,
+            VerityEntity verity,
+            VerityVoiceContext ctx,
+            String greetingId
+    ) {
+        UniverseVerity.LOGGER.error(
+                "[VerityQuest] Voice director failed for {}; using hard audio fallback",
+                player.getGameProfile().getName());
+
+        if (ctx.onStart() != null) {
+            ctx.onStart().run();
+        }
+
+        String subtitleKey = VeritySounds.subtitleKeyFor(greetingId);
+        player.serverLevel().playSound(
+                null,
+                verity.blockPosition(),
+                VeritySounds.GREETING_PERSONAL_HELPER.get(),
+                SoundSource.NEUTRAL,
+                0.92f,
+                1.0f
+        );
+
+        PlayVoicePacket packet = new PlayVoicePacket(
+                -1,
+                greetingId,
+                verity.getX(),
+                verity.getY(),
+                verity.getZ(),
+                0.92f,
+                1.0f,
+                subtitleKey,
+                verity.getId(),
+                GREETING_MONOLOGUE_TICKS,
+                false,
+                SoundSource.NEUTRAL.ordinal()
+        );
+        VerityNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+
+        verity.scheduleServerCallback(GREETING_MONOLOGUE_TICKS, () -> {
+            if (ctx.onComplete() != null) {
+                ctx.onComplete().run();
+            } else {
+                completeQuest1(player, verity);
+            }
+        });
+
+        VerityDebug.warn("Hard fallback greeting played for {}", player.getGameProfile().getName());
     }
 
     public static void completeQuest1(ServerPlayer player, @Nullable VerityEntity verity) {

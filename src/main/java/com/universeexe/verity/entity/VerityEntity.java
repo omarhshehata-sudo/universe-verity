@@ -53,12 +53,15 @@ public class VerityEntity extends PathfinderMob {
     public static final float SOURCE_MESH_BLOCKS = 11.0f / 16.0f;
     /** Matches verity-5.7.2 bounce curve length (client). */
     public static final int BOUNCE_DURATION_TICKS = 50;
-    /** Hover above the box opening before gravity drop. */
-    public static final int INTRO_FLOAT_TICKS = 12;
-    /** Brief hurt face after box-open landing (~1 s). Combat hurt stays {@link #HURT_FACE_DURATION_TICKS}. */
+    /** JAR: bounce anim ends → default face at tick 50 after spawn. */
+    public static final int JAR_HAPPY_FACE_AFTER_SPAWN_TICKS = 50;
+    /** JAR: clientIntroDelay 10 after bounce → intro/greeting at tick 60 after spawn. */
+    public static final int JAR_GREETING_AFTER_SPAWN_TICKS = 60;
+    /** Brief hurt face after box-open landing. Combat hurt stays {@link #HURT_FACE_DURATION_TICKS}. */
     public static final int INTRO_LAND_HURT_FACE_TICKS = 20;
-    /** Y offset from box feet to Verity spawn (box height 1.0 + slight float above lid). */
-    public static final double INTRO_SPAWN_Y_ABOVE_BOX = 1.08D;
+    /** Legacy — JAR spawns at box block Y (gravity drop), not floating above lid. */
+    @Deprecated
+    public static final double INTRO_SPAWN_Y_ABOVE_BOX = 0.0D;
 
     private static final EntityDataAccessor<String> DATA_ANIMATION =
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.STRING);
@@ -121,11 +124,16 @@ public class VerityEntity extends PathfinderMob {
     private double pendingFallBounceY = -1.0;
     /** Brief hurt face after wall/fall bounce, then restore happy idle. */
     private int hurtFaceResetTicks;
-    /** Box-open cinematic — float, fall, bounce, hurt, then quest greeting. */
+    /** Box-open cinematic — fall, bounce, greeting (verity-5.7.3 JAR timing). */
     private VerityIntroPhase introPhase = VerityIntroPhase.NONE;
     private int introPhaseTicks;
+    private int postRevealTicks;
     private boolean introLandHandled;
     private boolean pendingQuest1Intro;
+    private boolean postRevealGreetingScheduled;
+    @Nullable
+    private Runnable pendingServerCallback;
+    private int pendingServerCallbackTicks;
     /** Server tick when setWasThrown(true) was last applied. */
     private int thrownAtTick = -1000;
     /** When true, Verity pathfinds toward the owning player and rolls while moving. */
@@ -226,23 +234,27 @@ public class VerityEntity extends PathfinderMob {
         this.greetingStarted = false;
         this.greetingCompleted = false;
         this.greetingStageTicks = 0;
-        this.introPhase = VerityIntroPhase.FLOATING;
+        this.introPhase = VerityIntroPhase.FALLING;
         this.introPhaseTicks = 0;
+        this.postRevealTicks = 0;
         this.introLandHandled = false;
         this.pendingQuest1Intro = true;
+        this.postRevealGreetingScheduled = false;
         this.hurtFaceResetTicks = 0;
         this.pendingDefaultSmile = false;
         this.faceTicksRemaining = 20;
         this.targetYRot = yawToward(owner);
         setExpression(VerityExpressionState.HAPPY);
-        com.universeexe.verity.trust.MoodState mood =
-                com.universeexe.verity.trust.VerityTrustManager.getMood(owner);
-        setMoodState(mood);
-        setFaceVariant("auto");
+        setMoodState(com.universeexe.verity.trust.VerityTrustManager.getMood(owner));
+        // JAR triggerBoxDrop: hurt face + immediate gravity bounce.
+        setFaceVariant("hurt");
         setTalking(false);
         setWasThrown(false);
-        setNoGravity(true);
-        triggerAnimation("reveal");
+        setNoGravity(false);
+        triggerBounce();
+        com.universeexe.verity.util.VerityDebug.log(
+                "Post-reveal started for {} — JAR fall/bounce/greeting timing",
+                owner.getGameProfile().getName());
     }
 
     public boolean isIntroCinematicActive() {
@@ -275,18 +287,40 @@ public class VerityEntity extends PathfinderMob {
         }
         ServerPlayer owner = findOwner();
         if (owner == null) {
+            VerityDebug.warn("Quest 1 greeting deferred — owner not found for Verity {}", this.getUUID());
+            postRevealGreetingScheduled = false;
             return;
         }
         pendingQuest1Intro = false;
         introPhase = VerityIntroPhase.GREETING;
         hurtFaceResetTicks = 0;
-        setFaceVariant("auto");
-        setExpression(VerityExpressionState.HAPPY);
+        setFaceVariant("happy");
+        setExpression(VerityExpressionState.GREETING);
+        setTalking(true);
+        talkTicksRemaining = GREETING_DURATION_TICKS;
+        triggerAnimation("greeting");
         com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, this);
+    }
+
+    public void scheduleServerCallback(int ticks, Runnable callback) {
+        if (this.level().isClientSide || callback == null) {
+            return;
+        }
+        this.pendingServerCallback = callback;
+        this.pendingServerCallbackTicks = Math.max(1, ticks);
     }
 
     public void triggerBounce() {
         this.entityData.set(DATA_BOUNCE_START, 1);
+    }
+
+    /** JAR scheduled impact one-shots during box-open reveal. */
+    public void playRevealImpact(net.minecraft.sounds.SoundEvent sound) {
+        if (this.level().isClientSide || sound == null) {
+            return;
+        }
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.BLOCKS, 1.0f, 1.0f);
+        setFaceVariant("hurt");
     }
 
     public int getBounceStartTick() {
@@ -317,6 +351,15 @@ public class VerityEntity extends PathfinderMob {
         }
 
         tickIntroReveal();
+
+        if (pendingServerCallbackTicks > 0) {
+            pendingServerCallbackTicks--;
+            if (pendingServerCallbackTicks == 0 && pendingServerCallback != null) {
+                Runnable callback = pendingServerCallback;
+                pendingServerCallback = null;
+                callback.run();
+            }
+        }
 
         // After bounce settles (with grace), clear WasThrown so look-at / optional stationary resume.
         if (wasThrown
@@ -459,14 +502,22 @@ public class VerityEntity extends PathfinderMob {
             return;
         }
         introPhaseTicks++;
+        postRevealTicks++;
+
+        if (postRevealTicks == JAR_HAPPY_FACE_AFTER_SPAWN_TICKS) {
+            setFaceVariant("happy");
+            hurtFaceResetTicks = 0;
+        }
+        if (!postRevealGreetingScheduled && postRevealTicks >= JAR_GREETING_AFTER_SPAWN_TICKS) {
+            postRevealGreetingScheduled = true;
+            scheduleQuest1IntroAfterReveal();
+        }
 
         switch (introPhase) {
             case FLOATING -> {
-                if (introPhaseTicks >= INTRO_FLOAT_TICKS) {
-                    setNoGravity(false);
-                    introPhase = VerityIntroPhase.FALLING;
-                    introPhaseTicks = 0;
-                }
+                setNoGravity(false);
+                introPhase = VerityIntroPhase.FALLING;
+                introPhaseTicks = 0;
             }
             case FALLING -> {
                 if (!introLandHandled && this.onGround()) {
@@ -477,29 +528,14 @@ public class VerityEntity extends PathfinderMob {
                         introLandHandled = true;
                         introPhase = VerityIntroPhase.BOUNCING;
                         introPhaseTicks = 0;
-                        triggerBounce();
                     }
                 }
             }
-            case BOUNCING -> {
-                boolean settled = this.onGround() && pendingFallBounceTicks <= 0;
-                if (settled) {
-                    Vec3 motion = this.getDeltaMovement();
-                    settled = motion.horizontalDistanceSqr() < 1.0E-4 && Math.abs(motion.y) < 0.06D;
-                }
-                if (settled || introPhaseTicks > 40) {
-                    applyIntroLandHurtFace();
-                    introPhase = VerityIntroPhase.HURT_FACE;
-                    introPhaseTicks = 0;
-                }
-            }
-            case HURT_FACE -> {
-                if (introPhaseTicks >= INTRO_LAND_HURT_FACE_TICKS) {
-                    scheduleQuest1IntroAfterReveal();
-                }
+            case BOUNCING, HURT_FACE -> {
+                // Greeting fires on postRevealTicks — keep physics bounce until then.
             }
             case GREETING -> {
-                // Quest voice + idle handled by VerityQuestManager / finishIntroReveal.
+                // Quest voice handled by VerityQuestManager / finishIntroReveal.
             }
             default -> {
             }
@@ -547,7 +583,7 @@ public class VerityEntity extends PathfinderMob {
         hurtFaceResetTicks = 0;
         pendingDefaultSmile = false;
         setTalking(false);
-        setFaceVariant("auto");
+        setFaceVariant("happy");
         setExpression(VerityExpressionState.HAPPY);
         if (!isTalking() && voiceCueQueue.isEmpty()
                 && !(greetingStarted && !greetingCompleted)) {
@@ -585,8 +621,8 @@ public class VerityEntity extends PathfinderMob {
         // Drop talking/listening leftovers immediately so the smiley shows while settling.
         setTalking(false);
         setExpression(VerityExpressionState.HAPPY);
-        // Keep face variant on auto so /verity expression set can still remap textures.
-        setFaceVariant("auto");
+        // JAR default idle smiley — explicit happy, not mood-derived auto.
+        setFaceVariant("happy");
         pendingDefaultSmile = true;
         tryApplyDefaultSmile();
     }
@@ -607,7 +643,7 @@ public class VerityEntity extends PathfinderMob {
         setTalking(false);
         setExpression(VerityExpressionState.HAPPY);
         if (hurtFaceResetTicks <= 0) {
-            setFaceVariant("auto");
+            setFaceVariant("happy");
         }
         triggerAnimation("idle");
     }
@@ -798,12 +834,12 @@ public class VerityEntity extends PathfinderMob {
     }
 
     /**
-     * Talking mouth only while the synced talking flag is set.
-     * Do not infer from leftover anim names or post-bounce intro ticks — those left a
-     * talking mouth after speech ended.
+     * JAR talking mouth: synced flag, client intro tail, or greeting voice window.
      */
     public boolean isVisuallyTalking() {
-        return isTalking();
+        return isTalking()
+                || clientIntroTicks > 0
+                || (introPhase == VerityIntroPhase.GREETING && greetingStarted && !greetingCompleted);
     }
 
     @Override

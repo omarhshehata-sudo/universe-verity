@@ -9,11 +9,22 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * Maps synced trust mood / talk / brief overrides to verity-5.7.3 sphere face PNGs
- * under {@code textures/entity/}. Clients never compute trust — they only read {@code DATA_MOOD}.
+ * Maps synced face variant + talk state to verity-5.7.3 sphere PNGs under {@code textures/entity/}.
+ *
+ * <p>JAR rules ({@code VerityEntity.getTextureRL} / {@code setVariant}):
+ * <ul>
+ *   <li>Default idle = {@code happy} ({@code VARIANT_DEFAULT})</li>
+ *   <li>Explicit {@code hurt} override from landing / damage</li>
+ *   <li>While talking: {@code happy}→{@code happy_talking}, {@code crazy}→{@code crazy_talking},
+ *       {@code evil}→{@code evil_talking}, serious_*→{@code serious_talking}, else keep base name</li>
+ *   <li>Trust mood faces apply only when server sets an explicit non-auto variant via trust updates</li>
+ * </ul>
  */
 @OnlyIn(Dist.CLIENT)
 public final class VerityFaceTextures {
+    /** JAR {@code VARIANT_DEFAULT}. */
+    public static final String DEFAULT_VARIANT = "happy";
+
     private VerityFaceTextures() {
     }
 
@@ -22,19 +33,22 @@ public final class VerityFaceTextures {
         if (faceVariant != null && "hurt".equalsIgnoreCase(faceVariant)) {
             return forVariant("hurt");
         }
-        String resolved = resolveVariant(
+        String base = resolveBaseVariant(
                 entity.getRenderExpression(),
                 faceVariant,
                 entity.getMoodState()
         );
         if (entity.isVisuallyTalking()) {
-            resolved = talkingVariant(resolved);
+            base = talkingVariant(base);
         }
-        return forVariant(resolved);
+        return forVariant(base);
     }
 
-    /** Picks idle face from explicit override, synced mood, or transient expression (blink/blank). */
-    public static String resolveVariant(
+    /**
+     * JAR idle face: explicit synced variant, else {@code happy}. Mood is used only when trust
+     * pushed a concrete variant (not {@code auto}).
+     */
+    public static String resolveBaseVariant(
             VerityExpressionState expression,
             String overrideVariant,
             MoodState mood
@@ -49,6 +63,22 @@ public final class VerityFaceTextures {
         if (expression == VerityExpressionState.BLINK || expression == VerityExpressionState.LONG_BLINK) {
             return "happy_sleep";
         }
+        // JAR default — not mood-derived on first reveal.
+        return DEFAULT_VARIANT;
+    }
+
+    /** @deprecated use {@link #resolveBaseVariant} */
+    @Deprecated
+    public static String resolveVariant(
+            VerityExpressionState expression,
+            String overrideVariant,
+            MoodState mood
+    ) {
+        return resolveBaseVariant(expression, overrideVariant, mood);
+    }
+
+    /** Trust mood → PNG when server explicitly applies mood face (not {@code auto}). */
+    public static String moodLegacyVariant(MoodState mood) {
         MoodState synced = mood == null ? MoodState.MEH : mood;
         return sanitize(synced.legacyFaceVariant());
     }
@@ -59,39 +89,25 @@ public final class VerityFaceTextures {
     }
 
     public static String baseVariant(VerityExpressionState expression, String overrideVariant) {
-        if (overrideVariant != null && !overrideVariant.isBlank()
-                && !"auto".equalsIgnoreCase(overrideVariant)) {
-            return sanitize(overrideVariant);
-        }
-        return switch (expression) {
-            case HAPPY, GREETING -> "happy";
-            case LISTENING -> "serious_1";
-            case THINKING -> "serious_2";
-            case CONFUSED -> "crazy";
-            case CONCERNED -> "serious_3";
-            case SURPRISED -> "crazy";
-            case BLINK, LONG_BLINK -> "happy_sleep";
-            case BLANK, OFF -> "noface";
-            case WATCHING -> "serious_1";
-            default -> "neutral";
-        };
+        return resolveBaseVariant(expression, overrideVariant, MoodState.MEH);
     }
 
+    /** Matches verity-5.7.3 {@code getTextureRL} talking swap. */
     public static String talkingVariant(String base) {
-        return switch (base) {
+        return switch (sanitize(base)) {
             case "happy", "happy_sleep" -> "happy_talking";
             case "crazy" -> "crazy_talking";
             case "evil", "smiling_evil" -> "evil_talking";
             case "serious_1", "serious_2", "serious_3" -> "serious_talking";
             case "neutral" -> "neutral_talking";
             case "hurt", "noface", "verity_demon" -> base;
-            default -> base.endsWith("_talking") ? base : base + "_talking";
+            default -> base.endsWith("_talking") ? base : base;
         };
     }
 
     public static String sanitize(String variant) {
         if (variant == null || variant.isBlank()) {
-            return "happy";
+            return DEFAULT_VARIANT;
         }
         String v = variant.trim().toLowerCase().replace('-', '_');
         if (v.endsWith(".png")) {
@@ -101,7 +117,7 @@ public final class VerityFaceTextures {
             case "crazy_talking", "happy", "happy_sleep", "happy_talking", "hurt", "neutral", "noface",
                  "serious_1", "serious_2", "serious_3", "serious_talking", "evil", "evil_talking",
                  "smiling_evil", "crazy", "neutral_talking", "verity_demon" -> v;
-            default -> "happy";
+            default -> DEFAULT_VARIANT;
         };
     }
 }

@@ -1,5 +1,6 @@
 package com.universeexe.verity.network;
 
+import com.universeexe.verity.UniverseVerity;
 import com.universeexe.verity.client.subtitle.VeritySubtitles;
 import com.universeexe.verity.client.subtitle.VeritySubtitleHud;
 import com.universeexe.verity.registry.VeritySounds;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Supplier;
 
@@ -69,22 +71,37 @@ public record PlayVoicePacket(
     }
 
     private static void handleClient(PlayVoicePacket packet) {
-        if (VeritySounds.byId(packet.soundId) == null) {
-            return;
-        }
-        SoundEvent sound = VeritySounds.byId(packet.soundId).get();
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) {
+            UniverseVerity.LOGGER.warn("[VerityVoice] PlayVoicePacket dropped — no level/player (sound={})", packet.soundId);
             return;
         }
-        SoundSource source = SoundSource.values()[Math.floorMod(packet.soundSourceOrdinal, SoundSource.values().length)];
-        mc.level.playLocalSound(packet.x, packet.y, packet.z, sound, source, packet.volume, packet.pitch, false);
-        if (packet.subtitleKey != null && !packet.subtitleKey.isBlank()) {
-            Component text = VeritySubtitles.fromKey(packet.subtitleKey);
-            if (VeritySubtitles.isVerityDialogueKey(packet.subtitleKey)) {
-                VeritySubtitleHud.show(text, packet.durationTicks);
-            }
+
+        String resolvedSoundId = VeritySounds.normalizeSoundId(packet.soundId);
+        RegistryObject<SoundEvent> registered = VeritySounds.byId(resolvedSoundId);
+        if (registered != null && registered.isPresent()) {
+            SoundSource source = SoundSource.values()[Math.floorMod(packet.soundSourceOrdinal, SoundSource.values().length)];
+            mc.level.playLocalSound(
+                    packet.x, packet.y, packet.z,
+                    registered.get(), source, packet.volume, packet.pitch, false);
+        } else {
+            UniverseVerity.LOGGER.error("[VerityVoice] Unregistered sound id '{}' — audio skipped", resolvedSoundId);
         }
+
+        String subtitleKey = packet.subtitleKey();
+        if (subtitleKey == null || subtitleKey.isBlank()) {
+            subtitleKey = VeritySounds.subtitleKeyFor(resolvedSoundId);
+        }
+        if (subtitleKey != null && !subtitleKey.isBlank() && VeritySubtitles.isVerityDialogueKey(subtitleKey)) {
+            Component text = VeritySubtitles.fromKey(subtitleKey);
+            int duration = packet.durationTicks() > 0 ? packet.durationTicks() : 80;
+            VeritySubtitleHud.show(text, duration);
+        } else if (subtitleKey != null && !subtitleKey.isBlank()) {
+            UniverseVerity.LOGGER.warn("[VeritySubtitles] Non-dialogue key skipped: {}", subtitleKey);
+        } else {
+            UniverseVerity.LOGGER.warn("[VeritySubtitles] No subtitle key for sound {}", resolvedSoundId);
+        }
+
         VerityVoiceClientPlayback.onStarted(packet.sessionId, packet.durationTicks, packet.entityId);
     }
 }

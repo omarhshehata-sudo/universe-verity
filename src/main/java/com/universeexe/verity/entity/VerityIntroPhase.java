@@ -1,14 +1,14 @@
 package com.universeexe.verity.entity;
 
 /**
- * Server-side box-open emergence: float → fall → bounce → brief hurt → quest greeting.
+ * Server-side box-open emergence: fall → bounce → quest greeting (verity-5.7.3 JAR timing).
  */
 public enum VerityIntroPhase {
     /** Normal gameplay — not in box-open cinematic. */
     NONE,
-    /** Hover above the box opening while the lid opens. */
+    /** Legacy save tag — treated as {@link #FALLING} on load. */
     FLOATING,
-    /** Gravity enabled; falling to the ground beside the box. */
+    /** Gravity drop from box lid height (JAR {@code triggerBoxDrop}). */
     FALLING,
     /** First landing; physics bounce in progress. */
     BOUNCING,

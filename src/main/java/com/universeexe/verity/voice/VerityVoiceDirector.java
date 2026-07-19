@@ -540,7 +540,7 @@ public final class VerityVoiceDirector {
     }
 
     private static boolean isRegisteredSound(String soundId) {
-        RegistryObject<net.minecraft.sounds.SoundEvent> ro = VeritySounds.byId(soundId);
+        RegistryObject<net.minecraft.sounds.SoundEvent> ro = VeritySounds.byId(VeritySounds.normalizeSoundId(soundId));
         return ro != null && ro.isPresent();
     }
 

@@ -174,7 +174,7 @@ public final class VerityTrustManager {
         }
         verity.setMoodState(mood);
         if (mood != MoodState.MONSTER && !verity.isTalking() && !"hurt".equalsIgnoreCase(verity.getFaceVariant())) {
-            verity.setFaceVariant("auto");
+            verity.setFaceVariant(mood.legacyFaceVariant());
         }
     }
 

@@ -35,6 +35,8 @@
   "subtitles.universe_verity.verity.your_voice_sounds_exactly": "Verity: Your voice sounds exactly how I imagined it.",
   "subtitles.universe_verity.verity.i_mean_imagined_it": "Verity: Actually… I didn't imagine it.",
   "subtitles.universe_verity.verity.reveal_box_open": "Cardboard opens",
+  "subtitles.universe_verity.verity.reveal_box_click": "Box clicks",
+  "subtitles.universe_verity.verity.reveal_impact": "Verity lands",
   "subtitles.universe_verity.verity.reveal_movement": "Something moves inside the box",
   "commands.universe_verity.usage": "Usage: /verity <intro|box|reveal|entity|greeting|quest|speech|book|voice|trust|mood|countdown|transform|resetstory|sound|debug>",
   "message.universe_verity.countdown.warning_01": "Verity: Something is coming.",

@@ -143,13 +143,53 @@
       }
     ]
   },
+  "verity.box.click": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_box_click",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/box/movement/box_click",
+        "volume": 0.7,
+        "attenuation_distance": 12
+      }
+    ]
+  },
   "verity.reveal.box_open": {
     "subtitle": "subtitles.universe_verity.verity.reveal_box_open",
     "sounds": [
       {
         "name": "universe_verity:verity/reveal/box_open",
-        "volume": 0.78,
-        "attenuation_distance": 12
+        "volume": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.reveal.impact_0": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_impact",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/reveal/impact_0",
+        "volume": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.reveal.impact_1": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_impact",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/reveal/impact_1",
+        "volume": 1.0,
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "verity.reveal.impact_2": {
+    "subtitle": "subtitles.universe_verity.verity.reveal_impact",
+    "sounds": [
+      {
+        "name": "universe_verity:verity/reveal/impact_2",
+        "volume": 1.0,
+        "attenuation_distance": 16
       }
     ]
   },

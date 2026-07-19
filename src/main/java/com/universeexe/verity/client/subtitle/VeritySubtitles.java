@@ -30,6 +30,8 @@ public final class VeritySubtitles {
             "subtitles.universe_verity.box.knocking",
             "subtitles.universe_verity.box.shifting",
             "subtitles.universe_verity.verity.reveal_box_open",
+            "subtitles.universe_verity.verity.reveal_box_click",
+            "subtitles.universe_verity.verity.reveal_impact",
             "subtitles.universe_verity.verity.reveal_movement",
             "subtitles.universe_verity.countdown.transform"
     );
