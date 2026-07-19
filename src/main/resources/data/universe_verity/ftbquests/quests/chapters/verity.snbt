@@ -1,6 +1,6 @@
 {
 	id: "verity_chapter"
-	order_index: 0
+	order_index: 999
 	filename: "verity"
 	title: "VERITY"
 	subtitle: [
@@ -11,26 +11,10 @@
 		"It already knows you are here."
 	]
 	icon: {
-		id: "universe_verity:verity_box_quest_icon"
+		id: "minecraft:chest"
 	}
-	default_quest_shape: ""
+	default_quest_shape: "circle"
 	default_hide_dependency_lines: false
-	images: [
-		{
-			x: -16.0d
-			y: -9.0d
-			width: 32.0d
-			height: 18.0d
-			rotation: 0.0d
-			image: "universe_verity:textures/gui/quests/verity_chapter_background.png"
-			color: 0
-			alpha: 180
-			order: -1
-			hover: [""]
-			click: [""]
-			dev: false
-		}
-	]
 	quests: [
 		{
 			id: "verity_meet_verity"
@@ -41,7 +25,7 @@
 			title: "MEET VERITY!"
 			subtitle: "Something arrived with you."
 			icon: {
-				id: "universe_verity:verity_box_quest_icon"
+				id: "minecraft:chest"
 			}
 			description: [
 				"Something arrived before you did."
@@ -83,7 +67,7 @@
 			subtitle: "He is waiting for your voice."
 			dependencies: ["verity_meet_verity"]
 			icon: {
-				id: "universe_verity:verity_voice_quest_icon"
+				id: "minecraft:echo_shard"
 			}
 			description: [
 				"Verity has not looked away since leaving the box."
@@ -117,13 +101,13 @@
 			id: "verity_make_a_sound"
 			x: 8.0d
 			y: 1.0d
-			shape: "rsquare"
+			shape: "circle"
 			size: 1.5d
 			title: "MAKE A SOUND"
 			subtitle: "A demonstration of incredible power."
 			dependencies: ["verity_say_hello"]
 			icon: {
-				id: "universe_verity:verity_sound_quest_icon"
+				id: "minecraft:note_block"
 			}
 			description: [
 				"Verity claims he can do almost anything."

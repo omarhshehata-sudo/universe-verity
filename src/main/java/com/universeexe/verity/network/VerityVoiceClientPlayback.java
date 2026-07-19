@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -16,12 +17,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @OnlyIn(Dist.CLIENT)
 public final class VerityVoiceClientPlayback {
     private static final Map<Integer, PendingSession> PENDING = new ConcurrentHashMap<>();
+    private static final Set<Integer> FINISHED_SENT = ConcurrentHashMap.newKeySet();
 
     private VerityVoiceClientPlayback() {
     }
 
     public static void onStarted(int sessionId, int durationTicks, int entityId) {
-        PENDING.put(sessionId, new PendingSession(sessionId, Math.max(1, durationTicks), entityId));
+        int paddedDuration = Math.max(durationTicks + 15, 30);
+        PENDING.put(sessionId, new PendingSession(sessionId, paddedDuration, entityId));
         VerityNetwork.CHANNEL.sendToServer(new PlaybackStatusPacket(sessionId, PlaybackStatusPacket.Status.STARTED));
     }
 
@@ -50,8 +53,10 @@ public final class VerityVoiceClientPlayback {
             }
             session.talkTicks--;
             if (session.talkTicks <= 0) {
-                VerityNetwork.CHANNEL.sendToServer(
-                        new PlaybackStatusPacket(session.sessionId, PlaybackStatusPacket.Status.FINISHED));
+                if (FINISHED_SENT.add(session.sessionId)) {
+                    VerityNetwork.CHANNEL.sendToServer(
+                            new PlaybackStatusPacket(session.sessionId, PlaybackStatusPacket.Status.FINISHED));
+                }
                 it.remove();
             }
         }

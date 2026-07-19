@@ -430,7 +430,7 @@ public final class VerityVoiceDirector {
             VerityNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
         }
 
-        state.fallbackTicksRemaining = variant.durationTicks() + 5;
+        state.fallbackTicksRemaining = variant.durationTicks() + 25;
         VerityDebug.log("[VerityVoice] Play {} session={} player={}", variant.soundId(), sessionId, player.getUUID());
         syncDebug(player);
     }
@@ -442,14 +442,12 @@ public final class VerityVoiceDirector {
         }
         int sessionId = event.sessionId();
         if (sessionId > 0 && sessionId == state.lastFinishedSessionId) {
+            VerityDebug.log("[VerityVoice] Ignored duplicate finish session={} player={}", sessionId, player.getUUID());
             return;
         }
         state.lastFinishedSessionId = sessionId;
         state.fallbackTicksRemaining = 0;
         VerityVoiceContext ctx = event.context();
-        if (ctx.onComplete() != null) {
-            ctx.onComplete().run();
-        }
         Optional<VerityQueuedVoiceEvent.ResolvedStep> next = event.advanceAfterPlayback();
         if (next.isPresent()) {
             if (event.pauseTicksRemaining() <= 0) {
@@ -471,6 +469,9 @@ public final class VerityVoiceDirector {
         tryStart(player, state);
         if (onComplete != null) {
             onComplete.run();
+        }
+        if (ctx.onComplete() != null) {
+            ctx.onComplete().run();
         }
         syncDebug(player);
     }

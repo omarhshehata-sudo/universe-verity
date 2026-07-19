@@ -25,7 +25,11 @@ import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Quest 1 (MEET VERITY!), Quest 2 (SAY HELLO), and Quest 3 (MAKE A SOUND) progression hooks.
@@ -36,8 +40,12 @@ public final class VerityQuestManager {
     public static final int Q3_XP = 40;
     public static final int Q2_FOLLOWUP_WINDOW_TICKS = 240;
     public static final int Q2_REPEAT_MIN_GAP_TICKS = 100;
+    /** Server-side HELLO debounce after accept (5 s). */
+    public static final int HELLO_DEBOUNCE_TICKS = 100;
     /** Matches {@code greeting_personal_helper.ogg} (~5.87 s). */
     private static final int GREETING_MONOLOGUE_TICKS = 118;
+    private static final Map<UUID, Long> HELLO_DEBOUNCE_UNTIL = new ConcurrentHashMap<>();
+    private static final Set<UUID> HELLO_CONVERSATION_ACTIVE = ConcurrentHashMap.newKeySet();
 
     private VerityQuestManager() {
     }
@@ -65,8 +73,17 @@ public final class VerityQuestManager {
         VerityVoiceDirector.clearQueue(player, false);
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, true)
-                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80))
-                .withOnComplete(() -> completeQuest1(player, verity));
+                .withOnStart(() -> {
+                    verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80);
+                    player.serverLevel().playSound(
+                            null,
+                            verity.blockPosition(),
+                            VeritySounds.GREETING_PERSONAL_HELPER.get(),
+                            SoundSource.NEUTRAL,
+                            0.92f,
+                            1.0f
+                    );
+                });
         VerityQueuedVoiceEvent event = buildQuest1IntroEvent(player, verity, ctx, () -> completeQuest1(player, verity));
 
         if (VerityVoiceDirector.requestEvent(player, event)) {
@@ -84,8 +101,7 @@ public final class VerityQuestManager {
             Runnable onComplete
     ) {
         var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
-        addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS, 8);
-        resolved.add(new VerityQueuedVoiceEvent.ResolvedStep(pickQuest1Ending(player, verity), 0));
+        addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS, 0);
         return VerityQueuedVoiceEvent.fromConversation(
                 "quest:verity_meet_verity_intro",
                 new com.universeexe.verity.voice.VerityConversation("quest_01_intro", VerityVoiceCategory.QUEST, java.util.List.of()),
@@ -198,14 +214,42 @@ public final class VerityQuestManager {
         VerityDebug.log("Quest 1 complete for {}", player.getGameProfile().getName());
     }
 
+    public static boolean isHelloDebounced(ServerPlayer player) {
+        Long until = HELLO_DEBOUNCE_UNTIL.get(player.getUUID());
+        return until != null && player.serverLevel().getGameTime() < until;
+    }
+
+    public static void markHelloAccepted(ServerPlayer player) {
+        HELLO_DEBOUNCE_UNTIL.put(
+                player.getUUID(),
+                player.serverLevel().getGameTime() + HELLO_DEBOUNCE_TICKS
+        );
+    }
+
     public static void handleHelloIntent(ServerPlayer player, VerityEntity verity, @Nullable String phrase) {
         if (player.level().isClientSide || !isQuest1Complete(player)) {
             return;
         }
-        if (VerityVoiceDirector.isPlayerBusy(player.getUUID())) {
-            VerityDebug.log("Hello ignored — voice busy for {}", player.getGameProfile().getName());
+        UUID playerId = player.getUUID();
+        if (isHelloDebounced(player)) {
+            UniverseVerity.LOGGER.info(
+                    "[VerityQuest] Dropped duplicate HELLO from {} (debounce active)",
+                    player.getGameProfile().getName());
             return;
         }
+        if (HELLO_CONVERSATION_ACTIVE.contains(playerId)) {
+            UniverseVerity.LOGGER.info(
+                    "[VerityQuest] Dropped duplicate HELLO from {} (greeting conversation active)",
+                    player.getGameProfile().getName());
+            return;
+        }
+        if (VerityVoiceDirector.isPlayerBusy(playerId)) {
+            UniverseVerity.LOGGER.info(
+                    "[VerityQuest] Dropped duplicate HELLO from {} (voice director busy)",
+                    player.getGameProfile().getName());
+            return;
+        }
+        markHelloAccepted(player);
         String normalized = phrase == null ? "" : phrase.trim().toLowerCase();
         if (!isQuest2Complete(player)) {
             playFirstGreeting(player, verity);
@@ -219,15 +263,20 @@ public final class VerityQuestManager {
     }
 
     private static void playFirstGreeting(ServerPlayer player, VerityEntity verity) {
+        UUID playerId = player.getUUID();
+        HELLO_CONVERSATION_ACTIVE.add(playerId);
+        VerityVoiceDirector.clearQueue(player, true);
         verity.clearVoiceCueQueue();
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, false);
         if (VerityVoiceDirector.requestConversation(player, "quest_02_first_greeting", ctx, () -> {
+            HELLO_CONVERSATION_ACTIVE.remove(playerId);
             completeQuest2(player, verity);
             VerityPlayerData.setQ2FollowupUntil(player, player.serverLevel().getGameTime() + Q2_FOLLOWUP_WINDOW_TICKS);
         })) {
             return;
         }
+        HELLO_CONVERSATION_ACTIVE.remove(playerId);
         VerityDebug.warn("Quest 2 first greeting voice failed; completing with fallback");
         completeQuest2(player, verity);
     }
@@ -287,6 +336,8 @@ public final class VerityQuestManager {
         if (now - VerityPlayerData.getQ2LastRepeatGameTime(player) < Q2_REPEAT_MIN_GAP_TICKS) {
             return;
         }
+        VerityVoiceDirector.clearQueue(player, true);
+        verity.clearVoiceCueQueue();
         if (!phrase.isBlank() && VerityTrustManager.isPoliteGreeting(phrase)) {
             VerityTrustManager.addTrustDefault(player, verity, TrustReason.POLITE_GREETING);
         }

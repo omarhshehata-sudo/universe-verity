@@ -16,15 +16,18 @@ import java.nio.file.StandardCopyOption;
  * Ships the VERITY FTB Quests chapter into the instance config folder so the
  * quest book works without a manual SNBT copy step.
  *
+ * <p>Only writes {@code chapters/verity.snbt}. Never touches {@code data.snbt}
+ * or other chapter files — overwriting book metadata can hide pack chapters.
+ *
  * Target (FTB Quests 1.20.1):
  *   config/ftbquests/quests/chapters/verity.snbt
  */
 public final class VerityFtbQuestInstaller {
     private static final String EMBEDDED_CHAPTER =
             "/data/universe_verity/ftbquests/quests/chapters/verity.snbt";
-    private static final String EMBEDDED_DATA =
-            "/data/universe_verity/ftbquests/quests/data.snbt";
     private static final String VERSION_MARKER = "universe_verity_chapter_version.txt";
+    /** Bump when embedded SNBT content changes (forces chapter rewrite). */
+    private static final String CHAPTER_CONTENT_VERSION = "3";
 
     private VerityFtbQuestInstaller() {
     }
@@ -40,7 +43,6 @@ public final class VerityFtbQuestInstaller {
         Path questsRoot = FMLPaths.CONFIGDIR.get().resolve("ftbquests").resolve("quests");
         Path chaptersDir = questsRoot.resolve("chapters");
         Path chapterFile = chaptersDir.resolve("verity.snbt");
-        Path dataFile = questsRoot.resolve("data.snbt");
         Path markerFile = questsRoot.resolve(VERSION_MARKER);
 
         try {
@@ -51,42 +53,23 @@ public final class VerityFtbQuestInstaller {
                     .map(c -> c.getModInfo().getVersion().toString())
                     .orElse("unknown");
 
+            String markerExpected = modVersion + "|" + CHAPTER_CONTENT_VERSION;
             boolean needsWrite = !Files.isRegularFile(chapterFile)
                     || !Files.isRegularFile(markerFile)
-                    || !modVersion.equals(Files.readString(markerFile).trim());
-
-            if (!Files.isRegularFile(dataFile)) {
-                writeResource(EMBEDDED_DATA, dataFile);
-                UniverseVerity.LOGGER.info("[VerityQuest] Wrote missing FTB quests data.snbt");
-            }
+                    || !markerExpected.equals(Files.readString(markerFile).trim());
 
             if (needsWrite) {
                 writeResource(EMBEDDED_CHAPTER, chapterFile);
-                Files.writeString(markerFile, modVersion + "\n", StandardCharsets.UTF_8);
+                Files.writeString(markerFile, markerExpected + "\n", StandardCharsets.UTF_8);
                 UniverseVerity.LOGGER.info(
                         "[VerityQuest] Installed VERITY FTB chapter → {}",
                         chapterFile.toAbsolutePath());
+                scheduleReload(server);
             } else {
-                UniverseVerity.LOGGER.info(
+                UniverseVerity.LOGGER.debug(
                         "[VerityQuest] VERITY FTB chapter already up to date at {}",
                         chapterFile.toAbsolutePath());
             }
-
-            // Also seed world-local copy used by some FTB Quests builds.
-            if (server != null) {
-                Path worldQuests = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
-                        .resolve("ftbquests")
-                        .resolve("quests");
-                Path worldChapters = worldQuests.resolve("chapters");
-                Path worldChapter = worldChapters.resolve("verity.snbt");
-                Files.createDirectories(worldChapters);
-                if (!Files.isRegularFile(worldQuests.resolve("data.snbt")) && Files.isRegularFile(dataFile)) {
-                    Files.copy(dataFile, worldQuests.resolve("data.snbt"), StandardCopyOption.REPLACE_EXISTING);
-                }
-                Files.copy(chapterFile, worldChapter, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            scheduleReload(server);
         } catch (Exception ex) {
             UniverseVerity.LOGGER.error("[VerityQuest] Failed to install FTB Verity chapter", ex);
         }

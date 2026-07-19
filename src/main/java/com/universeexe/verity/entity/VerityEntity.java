@@ -246,8 +246,9 @@ public class VerityEntity extends PathfinderMob {
         this.targetYRot = yawToward(owner);
         setExpression(VerityExpressionState.HAPPY);
         setMoodState(com.universeexe.verity.trust.VerityTrustManager.getMood(owner));
-        // JAR triggerBoxDrop: hurt face + immediate gravity bounce.
+        // JAR triggerBoxDrop: brief hurt face + immediate gravity bounce.
         setFaceVariant("hurt");
+        hurtFaceResetTicks = INTRO_LAND_HURT_FACE_TICKS;
         setTalking(false);
         setWasThrown(false);
         setNoGravity(false);
@@ -320,7 +321,9 @@ public class VerityEntity extends PathfinderMob {
             return;
         }
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.BLOCKS, 1.0f, 1.0f);
-        setFaceVariant("hurt");
+        if (!isIntroCinematicActive()) {
+            setFaceVariant("hurt");
+        }
     }
 
     public int getBounceStartTick() {
