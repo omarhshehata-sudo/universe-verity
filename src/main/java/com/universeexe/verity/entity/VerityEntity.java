@@ -221,7 +221,7 @@ public class VerityEntity extends PathfinderMob {
         com.universeexe.verity.trust.MoodState mood =
                 com.universeexe.verity.trust.VerityTrustManager.getMood(owner);
         setMoodState(mood);
-        setFaceVariant(mood.legacyFaceVariant());
+        setFaceVariant("auto");
         triggerAnimation("reveal");
         triggerBounce();
     }
@@ -412,8 +412,7 @@ public class VerityEntity extends PathfinderMob {
         hurtFaceResetTicks = 0;
         pendingDefaultSmile = false;
         setTalking(false);
-        // Force happy texture (not only "auto") so clients never keep a stuck hurt PNG.
-        setFaceVariant("happy");
+        setFaceVariant("auto");
         setExpression(VerityExpressionState.HAPPY);
         if (!isTalking() && voiceCueQueue.isEmpty()
                 && !(greetingStarted && !greetingCompleted)) {
@@ -774,11 +773,7 @@ public class VerityEntity extends PathfinderMob {
         if (!(source.getEntity() instanceof ServerPlayer attacker)) {
             return;
         }
-        if (ownerUuid == null || !ownerUuid.equals(attacker.getUUID())) {
-            return;
-        }
-        com.universeexe.verity.trust.VerityTrustManager.addTrustDefault(
-                attacker, this, com.universeexe.verity.trust.TrustReason.HIT_VERITY);
+        com.universeexe.verity.trust.VerityTrustEvents.onPlayerHitVerity(attacker, this);
     }
 
     @Override

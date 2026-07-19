@@ -162,7 +162,8 @@ public final class VerityTrustEvents {
         VerityVoiceMemory.forPlayer(player).setFlag(player, VerityVoiceMemoryFlag.PLAYER_FIRST_GREETING);
     }
 
-    public static void onPlayerHitVerity(ServerPlayer player) {
+    public static void onPlayerHitVerity(ServerPlayer player, @Nullable VerityEntity verity) {
+        VerityTrustManager.addTrustDefault(player, verity, TrustReason.HIT_VERITY);
         VerityVoiceMemory.forPlayer(player).setFlag(player, VerityVoiceMemoryFlag.PLAYER_HIT_VERITY);
     }
 

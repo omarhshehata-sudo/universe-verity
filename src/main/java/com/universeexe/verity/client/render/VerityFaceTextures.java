@@ -3,12 +3,14 @@ package com.universeexe.verity.client.render;
 import com.universeexe.verity.UniverseVerity;
 import com.universeexe.verity.animation.VerityExpressionState;
 import com.universeexe.verity.entity.VerityEntity;
+import com.universeexe.verity.trust.MoodState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * Maps expression / talk / trust mood to verity-5.7.3 sphere face PNGs under {@code textures/entity/}.
+ * Maps synced trust mood / talk / brief overrides to verity-5.7.3 sphere face PNGs
+ * under {@code textures/entity/}. Clients never compute trust — they only read {@code DATA_MOOD}.
  */
 @OnlyIn(Dist.CLIENT)
 public final class VerityFaceTextures {
@@ -20,27 +22,35 @@ public final class VerityFaceTextures {
         if (faceVariant != null && "hurt".equalsIgnoreCase(faceVariant)) {
             return forVariant("hurt");
         }
-        String resolved = resolveVariant(entity.getRenderExpression(), faceVariant, entity.getMoodState().legacyFaceVariant());
+        String resolved = resolveVariant(
+                entity.getRenderExpression(),
+                faceVariant,
+                entity.getMoodState()
+        );
         if (entity.isVisuallyTalking()) {
             resolved = talkingVariant(resolved);
         }
         return forVariant(resolved);
     }
 
-    /** Picks the idle face variant from expression override, explicit variant, or trust mood fallback. */
-    public static String resolveVariant(VerityExpressionState expression, String overrideVariant, String moodFallback) {
+    /** Picks idle face from explicit override, synced mood, or transient expression (blink/blank). */
+    public static String resolveVariant(
+            VerityExpressionState expression,
+            String overrideVariant,
+            MoodState mood
+    ) {
         if (overrideVariant != null && !overrideVariant.isBlank()
                 && !"auto".equalsIgnoreCase(overrideVariant)) {
             return sanitize(overrideVariant);
         }
-        String fromExpression = baseVariant(expression, null);
-        if (!"neutral".equals(fromExpression) || expression != VerityExpressionState.HAPPY) {
-            return fromExpression;
+        if (expression == VerityExpressionState.BLANK || expression == VerityExpressionState.OFF) {
+            return "noface";
         }
-        if (moodFallback != null && !moodFallback.isBlank()) {
-            return sanitize(moodFallback);
+        if (expression == VerityExpressionState.BLINK || expression == VerityExpressionState.LONG_BLINK) {
+            return "happy_sleep";
         }
-        return fromExpression;
+        MoodState synced = mood == null ? MoodState.MEH : mood;
+        return sanitize(synced.legacyFaceVariant());
     }
 
     public static ResourceLocation forVariant(String variant) {
@@ -74,7 +84,7 @@ public final class VerityFaceTextures {
             case "evil", "smiling_evil" -> "evil_talking";
             case "serious_1", "serious_2", "serious_3" -> "serious_talking";
             case "neutral" -> "neutral_talking";
-            case "hurt", "noface" -> base;
+            case "hurt", "noface", "verity_demon" -> base;
             default -> base.endsWith("_talking") ? base : base + "_talking";
         };
     }
@@ -90,7 +100,7 @@ public final class VerityFaceTextures {
         return switch (v) {
             case "crazy_talking", "happy", "happy_sleep", "happy_talking", "hurt", "neutral", "noface",
                  "serious_1", "serious_2", "serious_3", "serious_talking", "evil", "evil_talking",
-                 "smiling_evil", "crazy", "neutral_talking" -> v;
+                 "smiling_evil", "crazy", "neutral_talking", "verity_demon" -> v;
             default -> "happy";
         };
     }

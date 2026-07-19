@@ -45,7 +45,10 @@ public enum MoodState {
         };
     }
 
-    /** Face variant used by the ball renderer when mood faces are active. */
+    /**
+     * Real verity-5.7.3 sphere face PNG (without {@code .png}) for synced trust mood.
+     * Client resolves {@code auto} face variant from {@link #DATA_MOOD} via this mapping.
+     */
     public String legacyFaceVariant() {
         return switch (this) {
             case HAPPY -> "happy";
@@ -54,7 +57,7 @@ public enum MoodState {
             case ANGRY -> "smiling_evil";
             case FURIOUS -> "evil";
             case CRITICAL -> "crazy";
-            case MONSTER -> "evil";
+            case MONSTER -> "verity_demon";
         };
     }
 

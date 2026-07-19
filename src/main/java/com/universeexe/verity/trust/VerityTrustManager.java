@@ -173,8 +173,8 @@ public final class VerityTrustManager {
             return;
         }
         verity.setMoodState(mood);
-        if (mood != MoodState.MONSTER && !verity.isTalking()) {
-            verity.setFaceVariant(mood.legacyFaceVariant());
+        if (mood != MoodState.MONSTER && !verity.isTalking() && !"hurt".equalsIgnoreCase(verity.getFaceVariant())) {
+            verity.setFaceVariant("auto");
         }
     }
 
