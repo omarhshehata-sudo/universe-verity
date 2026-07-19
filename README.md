@@ -14,6 +14,9 @@ Forge 1.20.1 mod for the **universe.exe** horror pack. Implements Verity's seale
 - Forge **47.x** (tested with 47.4.10)
 - Java **17**
 - **GeckoLib** (declared dependency)
+- **FTB Quests** + **FTB Library** + **FTB Teams** (for the in-game VERITY quest book chapter)
+
+Verity quests appear in the **FTB Quests book**, not the vanilla Minecraft Advancements tab. On first world load the mod auto-installs the VERITY chapter into `config/ftbquests/quests/chapters/verity.snbt`. If the chapter is missing after updating, run `/verity book sync` or restart the instance once.
 
 ## Build from source
 

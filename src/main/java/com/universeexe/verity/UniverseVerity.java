@@ -75,6 +75,8 @@ public class UniverseVerity {
 
     private void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("Universe: Verity loaded (sealed-box intro + reveal + voice director)");
+        // Install VERITY chapter into this instance's FTB Quests config (CurseForge/Prism).
+        com.universeexe.verity.quest.VerityFtbQuestInstaller.installIfNeeded(event.getServer());
     }
 
     private void onAddReloadListeners(AddReloadListenerEvent event) {

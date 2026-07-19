@@ -379,6 +379,7 @@ public final class VerityVoiceDirector {
             int sessionId = SESSION_COUNTER.getAndIncrement();
             event.setSessionId(sessionId);
             event.markStarted();
+            state.lastFinishedSessionId = 0;
             state.fallbackTicksRemaining = variant.durationTicks();
             VerityDebug.log("[VerityVoice] Silent {} session={} player={}", variant.id(), sessionId, player.getUUID());
             syncDebug(player);
@@ -392,6 +393,7 @@ public final class VerityVoiceDirector {
         int sessionId = SESSION_COUNTER.getAndIncrement();
         event.setSessionId(sessionId);
         event.markStarted();
+        state.lastFinishedSessionId = 0;
 
         VerityVoiceContext ctx = event.context();
         applyAnchorBusy(player.serverLevel(), ctx, variant.durationTicks(), variant);
@@ -438,6 +440,12 @@ public final class VerityVoiceDirector {
         if (event == null) {
             return;
         }
+        int sessionId = event.sessionId();
+        if (sessionId > 0 && sessionId == state.lastFinishedSessionId) {
+            return;
+        }
+        state.lastFinishedSessionId = sessionId;
+        state.fallbackTicksRemaining = 0;
         VerityVoiceContext ctx = event.context();
         if (ctx.onComplete() != null) {
             ctx.onComplete().run();
@@ -581,6 +589,7 @@ public final class VerityVoiceDirector {
         @Nullable
         private VerityQueuedVoiceEvent currentEvent;
         private int fallbackTicksRemaining;
+        private int lastFinishedSessionId;
 
         private boolean isBusy() {
             return currentEvent != null || !queue.isEmpty();

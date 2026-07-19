@@ -1,8 +1,6 @@
 package com.universeexe.verity.quest;
 
-import com.universeexe.verity.config.VerityCommonConfig;
 import com.universeexe.verity.data.VerityPlayerData;
-import com.universeexe.verity.entity.VerityBoxSequence;
 import com.universeexe.verity.entity.VerityEntity;
 import com.universeexe.verity.trust.TrustReason;
 import com.universeexe.verity.trust.VerityTrustEvents;
@@ -79,9 +77,6 @@ public final class VerityQuestManager {
             Runnable onComplete
     ) {
         var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
-        addInline(resolved, "verity.q01.reveal.oh", 20, 12);
-        addInline(resolved, "verity.q01.reveal.found_opening", VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING,
-                VerityCommonConfig.OPEN_FOUND_PAUSE_TICKS.get());
         addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS, 8);
         resolved.add(new VerityQueuedVoiceEvent.ResolvedStep(pickQuest1Ending(player, verity), 0));
         return VerityQueuedVoiceEvent.fromConversation(
@@ -144,6 +139,10 @@ public final class VerityQuestManager {
 
     public static void handleHelloIntent(ServerPlayer player, VerityEntity verity, @Nullable String phrase) {
         if (player.level().isClientSide || !isQuest1Complete(player)) {
+            return;
+        }
+        if (VerityVoiceDirector.isPlayerBusy(player.getUUID())) {
+            VerityDebug.log("Hello ignored — voice busy for {}", player.getGameProfile().getName());
             return;
         }
         String normalized = phrase == null ? "" : phrase.trim().toLowerCase();

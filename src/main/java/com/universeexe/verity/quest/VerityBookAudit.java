@@ -86,8 +86,9 @@ public final class VerityBookAudit {
     }
 
     public static void syncProgress(ServerPlayer player) {
+        VerityFtbQuestInstaller.installIfNeeded(player.getServer());
         VerityFtbQuestBridge.reconcileAll(player);
-        player.sendSystemMessage(Component.literal("[Verity] FTB quest progress reconciled from local flags."));
+        player.sendSystemMessage(Component.literal("[Verity] FTB chapter installed/synced and progress reconciled."));
         UniverseVerity.LOGGER.info("[VerityQuest] book sync for {}", player.getGameProfile().getName());
     }
 

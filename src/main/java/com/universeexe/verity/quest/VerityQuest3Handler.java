@@ -69,7 +69,11 @@ public final class VerityQuest3Handler {
     }
 
     public static void handleMakeSoundIntent(ServerPlayer player, VerityEntity verity, @Nullable String phrase) {
-        if (player.level().isClientSide || !VerityQuestManager.isQuest2Complete(player)) {
+        if (player.level().isClientSide) {
+            return;
+        }
+        if (!VerityQuestManager.isQuest2Complete(player)) {
+            VerityDebug.log("MAKE_SOUND blocked — Quest 2 incomplete for {}", player.getGameProfile().getName());
             return;
         }
         Session existing = SESSIONS.get(player.getUUID());
@@ -77,7 +81,12 @@ public final class VerityQuest3Handler {
             tryHandleResponsePhrase(player, verity, phrase == null ? "" : phrase);
             return;
         }
-        if (existing != null || VerityVoiceDirector.isPlayerBusy(player.getUUID())) {
+        if (VerityVoiceDirector.isPlayerBusy(player.getUUID())) {
+            VerityDebug.log("MAKE_SOUND blocked — voice busy for {}", player.getGameProfile().getName());
+            return;
+        }
+        if (existing != null) {
+            VerityDebug.log("MAKE_SOUND blocked — quest session active for {}", player.getGameProfile().getName());
             return;
         }
         if (!isQuest3Complete(player)) {
@@ -460,15 +469,19 @@ public final class VerityQuest3Handler {
         if (matchesNegative(normalized)) {
             return PlayerResponse.NEGATIVE;
         }
+        if (normalized.equals("good") || normalized.equals("great") || normalized.contains("pretty good")
+                || normalized.contains("that was cool") || normalized.contains("nice one")) {
+            return PlayerResponse.POSITIVE;
+        }
         return PlayerResponse.UNRECOGNIZED;
     }
 
     private static boolean matchesAnother(String phrase) {
-        return phrase.contains("another")
+        return phrase.contains("another one")
                 || phrase.contains("one more")
                 || phrase.contains("do it again")
-                || phrase.contains("again")
-                || phrase.contains("do another");
+                || phrase.contains("do another")
+                || (phrase.contains("again") && !phrase.contains("hello") && !phrase.contains("hi "));
     }
 
     private static boolean matchesPositive(String phrase) {
