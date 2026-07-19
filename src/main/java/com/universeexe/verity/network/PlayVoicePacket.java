@@ -81,11 +81,6 @@ public record PlayVoicePacket(
         mc.level.playLocalSound(packet.x, packet.y, packet.z, sound, source, packet.volume, packet.pitch, false);
         if (packet.subtitleKey != null && !packet.subtitleKey.isBlank()) {
             Component text = VeritySubtitles.fromKey(packet.subtitleKey);
-            if (packet.actionBarMessage) {
-                mc.gui.setOverlayMessage(text, false);
-            } else {
-                mc.gui.getChat().addMessage(text);
-            }
             if (VeritySubtitles.isVerityDialogueKey(packet.subtitleKey)) {
                 VeritySubtitleHud.show(text, packet.durationTicks);
             }

@@ -8,7 +8,7 @@
           "id": "warning_01",
           "sound": "verity.countdown.warning_01",
           "duration_ticks": 50,
-          "subtitle": "message.universe_verity.countdown.warning_01"
+          "subtitle": "subtitles.universe_verity.countdown.warning_01"
         }
       ]
     },
@@ -19,7 +19,7 @@
           "id": "warning_02",
           "sound": "verity.countdown.warning_02",
           "duration_ticks": 40,
-          "subtitle": "message.universe_verity.countdown.warning_02"
+          "subtitle": "subtitles.universe_verity.countdown.warning_02"
         }
       ]
     },
@@ -30,7 +30,7 @@
           "id": "warning_03",
           "sound": "verity.countdown.warning_03",
           "duration_ticks": 45,
-          "subtitle": "message.universe_verity.countdown.warning_03"
+          "subtitle": "subtitles.universe_verity.countdown.warning_03"
         }
       ]
     },
@@ -41,7 +41,7 @@
           "id": "two_days",
           "sound": "verity.countdown.two_days",
           "duration_ticks": 30,
-          "subtitle": "message.universe_verity.countdown.two_days"
+          "subtitle": "subtitles.universe_verity.countdown.two_days"
         }
       ]
     },
@@ -52,7 +52,7 @@
           "id": "one_day",
           "sound": "verity.countdown.one_day",
           "duration_ticks": 30,
-          "subtitle": "message.universe_verity.countdown.one_day"
+          "subtitle": "subtitles.universe_verity.countdown.one_day"
         }
       ]
     },
@@ -63,7 +63,7 @@
           "id": "arrival",
           "sound": "verity.countdown.arrival",
           "duration_ticks": 35,
-          "subtitle": "message.universe_verity.countdown.arrival"
+          "subtitle": "subtitles.universe_verity.countdown.arrival"
         }
       ]
     },

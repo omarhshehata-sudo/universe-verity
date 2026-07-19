@@ -40,7 +40,7 @@ public final class VerityQuestManager {
     }
 
     public static boolean isQuest1Complete(ServerPlayer player) {
-        return VerityPlayerData.isQuest1Complete(player) || VerityPlayerData.isVerityRevealed(player);
+        return VerityPlayerData.isQuest1Complete(player);
     }
 
     public static boolean isQuest2Complete(ServerPlayer player) {
@@ -55,30 +55,73 @@ public final class VerityQuestManager {
         if (player.level().isClientSide || isQuest1Complete(player)) {
             return;
         }
+        if (verity == null || !verity.isAlive()) {
+            VerityDebug.warn("Quest 1 intro skipped — Verity missing for {}", player.getGameProfile().getName());
+            return;
+        }
         VerityVoiceDirector.clearQueue(player, true);
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, true)
                 .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80));
-        var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
-        addInline(resolved, "verity.q01.reveal.oh", 20, "subtitles.universe_verity.q01.reveal.oh", 12);
-        addInline(resolved, "verity.q01.reveal.found_opening", VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING,
-                "subtitles.universe_verity.q01.reveal.found_opening", VerityCommonConfig.OPEN_FOUND_PAUSE_TICKS.get());
-        addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS,
-                "subtitles.universe_verity.verity.greeting_personal_helper", 8);
-        resolved.add(new VerityQueuedVoiceEvent.ResolvedStep(pickQuest1Ending(player, verity), 0));
+        VerityQueuedVoiceEvent event = buildQuest1IntroEvent(player, verity, ctx, () -> completeQuest1(player, verity));
 
-        VerityQueuedVoiceEvent event = VerityQueuedVoiceEvent.fromConversation(
+        if (!VerityVoiceDirector.requestEvent(player, event)) {
+            VerityDebug.warn("Quest 1 intro voice queue failed; retrying direct fallback for {}",
+                    player.getGameProfile().getName());
+            playQuest1IntroDirectFallback(player, verity, ctx);
+        }
+    }
+
+    private static VerityQueuedVoiceEvent buildQuest1IntroEvent(
+            ServerPlayer player,
+            VerityEntity verity,
+            VerityVoiceContext ctx,
+            Runnable onComplete
+    ) {
+        var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
+        addInline(resolved, "verity.q01.reveal.oh", 20, 12);
+        addInline(resolved, "verity.q01.reveal.found_opening", VerityBoxSequence.DUR_OH_YOU_FOUND_THE_OPENING,
+                VerityCommonConfig.OPEN_FOUND_PAUSE_TICKS.get());
+        addInline(resolved, "verity.greeting.personal_helper", GREETING_MONOLOGUE_TICKS, 8);
+        resolved.add(new VerityQueuedVoiceEvent.ResolvedStep(pickQuest1Ending(player, verity), 0));
+        return VerityQueuedVoiceEvent.fromConversation(
                 "quest:verity_meet_verity_intro",
                 new com.universeexe.verity.voice.VerityConversation("quest_01_intro", VerityVoiceCategory.QUEST, java.util.List.of()),
                 resolved,
                 ctx,
+                onComplete
+        );
+    }
+
+    private static void playQuest1IntroDirectFallback(ServerPlayer player, VerityEntity verity, VerityVoiceContext ctx) {
+        if (ctx.onStart() != null) {
+            ctx.onStart().run();
+        }
+        VerityQueuedVoiceEvent fallback = buildQuest1IntroEvent(
+                player,
+                verity,
+                ctx,
                 () -> completeQuest1(player, verity)
         );
-
-        if (!VerityVoiceDirector.requestEvent(player, event)) {
-            VerityDebug.warn("Quest 1 intro voice failed; completing with fallback for {}", player.getGameProfile().getName());
-            completeQuest1(player, verity);
+        if (VerityVoiceDirector.requestEvent(player, fallback)) {
+            return;
         }
+        VerityDebug.warn("Quest 1 intro fallback queue failed; playing greeting directly for {}",
+                player.getGameProfile().getName());
+        String greetingId = "verity.greeting.personal_helper";
+        if (VerityVoiceDirector.requestDirect(
+                player,
+                greetingId,
+                VerityVoiceCategory.QUEST,
+                GREETING_MONOLOGUE_TICKS,
+                com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(greetingId),
+                0.92f,
+                1.0f,
+                ctx.withOnComplete(() -> completeQuest1(player, verity))
+        )) {
+            return;
+        }
+        completeQuest1(player, verity);
     }
 
     public static void completeQuest1(ServerPlayer player, @Nullable VerityEntity verity) {
@@ -87,6 +130,7 @@ public final class VerityQuestManager {
         }
         VerityPlayerData.setQuest1Complete(player, true);
         VerityPlayerData.setVerityRevealed(player, true);
+        VerityPlayerData.setGreetingPlayed(player, true);
         VerityPlayerData.setRelationship(player, "new");
         VerityTrustEvents.onOpenedBox(player, verity);
         VerityTrustManager.completeQuestTrust(player, verity, VerityQuestIds.MEET_VERITY);
@@ -221,21 +265,31 @@ public final class VerityQuestManager {
         }
         boolean important = player.getRandom().nextFloat() >= 0.85f;
         String sound = important ? "verity.q01.intro.everything_important" : "verity.q01.intro.know_everything";
-        String sub = important
-                ? "subtitles.universe_verity.q01.intro.everything_important"
-                : "subtitles.universe_verity.q01.intro.know_everything";
-        return VerityVoiceVariant.simple(sound, sound, 36, sub, 0.92f, 1.0f);
+        return VerityVoiceVariant.simple(
+                sound,
+                sound,
+                important ? 38 : 36,
+                com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(sound),
+                0.92f,
+                1.0f
+        );
     }
 
     private static void addInline(
             ArrayList<VerityQueuedVoiceEvent.ResolvedStep> steps,
             String soundId,
             int duration,
-            String subtitle,
             int pauseAfter
     ) {
         steps.add(new VerityQueuedVoiceEvent.ResolvedStep(
-                VerityVoiceVariant.simple(soundId, soundId, duration, subtitle, 0.92f, 1.0f),
+                VerityVoiceVariant.simple(
+                        soundId,
+                        soundId,
+                        duration,
+                        com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(soundId),
+                        0.92f,
+                        1.0f
+                ),
                 pauseAfter
         ));
     }

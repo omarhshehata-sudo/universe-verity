@@ -298,6 +298,21 @@ public final class VeritySounds {
         if (soundId == null || !soundId.startsWith("verity.")) {
             return "";
         }
-        return "subtitles.universe_verity." + soundId.substring("verity.".length());
+        String suffix = soundId.substring("verity.".length());
+        if (suffix.startsWith("voice.")) {
+            return "subtitles.universe_verity.verity." + suffix.substring("voice.".length());
+        }
+        if (suffix.startsWith("greeting.")) {
+            return "subtitles.universe_verity.verity.greeting_"
+                    + suffix.substring("greeting.".length()).replace('.', '_');
+        }
+        if (suffix.startsWith("reveal.")) {
+            return "subtitles.universe_verity.verity.reveal_"
+                    + suffix.substring("reveal.".length()).replace('.', '_');
+        }
+        if ("intro.video_audio".equals(suffix)) {
+            return "subtitles.universe_verity.intro.video";
+        }
+        return "subtitles.universe_verity." + suffix;
     }
 }

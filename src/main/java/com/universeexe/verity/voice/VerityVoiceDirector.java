@@ -507,7 +507,9 @@ public final class VerityVoiceDirector {
             return;
         }
         Entity entity = level.getEntity(ctx.anchorEntityId());
-        if (entity instanceof VerityEntity verity) {
+        if (entity instanceof VerityBoxEntity box) {
+            box.setVoiceBusyTicks(0);
+        } else if (entity instanceof VerityEntity verity) {
             verity.setVoiceDirectorBusy(false);
         }
     }

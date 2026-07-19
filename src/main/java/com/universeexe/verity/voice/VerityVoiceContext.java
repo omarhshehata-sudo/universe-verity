@@ -37,7 +37,7 @@ public record VerityVoiceContext(
                     ? v : null;
             snapshot = VerityVoiceSnapshot.capture(owner, verity);
         }
-        return new VerityVoiceContext(owner, entityId, x, y, z, ownerOnly, source, ownerOnly, null, null, snapshot);
+        return new VerityVoiceContext(owner, entityId, x, y, z, ownerOnly, source, false, null, null, snapshot);
     }
 
     public VerityVoiceContext withOnStart(@Nullable Runnable onStart) {
