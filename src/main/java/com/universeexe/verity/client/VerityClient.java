@@ -5,6 +5,7 @@ import com.universeexe.verity.client.render.VerityDemonRenderer;
 import com.universeexe.verity.client.render.VerityRenderer;
 import com.universeexe.verity.registry.VerityEntities;
 import com.universeexe.verity.network.VerityVoiceClientPlayback;
+import com.universeexe.verity.client.subtitle.VeritySubtitleHud;
 import com.universeexe.verity.client.voice.VoiceDirectorDebugOverlay;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -22,6 +23,7 @@ public final class VerityClient {
         modBus.addListener(VerityClient::registerRenderers);
         MinecraftForge.EVENT_BUS.addListener(VerityClient::onClientTick);
         MinecraftForge.EVENT_BUS.register(VoiceDirectorDebugOverlay.class);
+        MinecraftForge.EVENT_BUS.register(VeritySubtitleHud.class);
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -1,5 +1,7 @@
 package com.universeexe.verity.network;
 
+import com.universeexe.verity.client.subtitle.VeritySubtitles;
+import com.universeexe.verity.client.subtitle.VeritySubtitleHud;
 import com.universeexe.verity.registry.VeritySounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -78,11 +80,14 @@ public record PlayVoicePacket(
         SoundSource source = SoundSource.values()[Math.floorMod(packet.soundSourceOrdinal, SoundSource.values().length)];
         mc.level.playLocalSound(packet.x, packet.y, packet.z, sound, source, packet.volume, packet.pitch, false);
         if (packet.subtitleKey != null && !packet.subtitleKey.isBlank()) {
-            Component text = Component.translatable(packet.subtitleKey);
+            Component text = VeritySubtitles.fromKey(packet.subtitleKey);
             if (packet.actionBarMessage) {
                 mc.gui.setOverlayMessage(text, false);
             } else {
                 mc.gui.getChat().addMessage(text);
+            }
+            if (VeritySubtitles.isVerityDialogueKey(packet.subtitleKey)) {
+                VeritySubtitleHud.show(text, packet.durationTicks);
             }
         }
         VerityVoiceClientPlayback.onStarted(packet.sessionId, packet.durationTicks, packet.entityId);
