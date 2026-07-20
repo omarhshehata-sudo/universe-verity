@@ -7,7 +7,7 @@
         {
           "id": "hello_again",
           "sound": "verity.q02.repeat.hello_again",
-          "duration_ticks": 45,
+          "duration_ticks": 21,
           "subtitle": "subtitles.universe_verity.q02.repeat.hello_again",
           "weight": 30,
           "cooldown_ticks": 100
@@ -15,7 +15,7 @@
         {
           "id": "hi",
           "sound": "verity.q02.repeat.hi",
-          "duration_ticks": 36,
+          "duration_ticks": 21,
           "subtitle": "subtitles.universe_verity.q02.repeat.hi",
           "weight": 25,
           "cooldown_ticks": 100
@@ -23,7 +23,7 @@
         {
           "id": "no_introduction_01",
           "sound": "verity.q02.repeat.no_introduction_01",
-          "duration_ticks": 60,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.repeat.no_introduction_01",
           "weight": 12,
           "cooldown_ticks": 200
@@ -31,7 +31,7 @@
         {
           "id": "no_introduction_02",
           "sound": "verity.q02.repeat.no_introduction_02",
-          "duration_ticks": 58,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.repeat.no_introduction_02",
           "weight": 12,
           "cooldown_ticks": 200
@@ -39,7 +39,7 @@
         {
           "id": "likes_name",
           "sound": "verity.q02.repeat.likes_name",
-          "duration_ticks": 50,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.repeat.likes_name",
           "weight": 15,
           "cooldown_ticks": 400
@@ -47,7 +47,7 @@
         {
           "id": "happier",
           "sound": "verity.q02.repeat.happier",
-          "duration_ticks": 52,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.repeat.happier",
           "weight": 6,
           "rare": true,
@@ -63,37 +63,37 @@
       "steps": [
         {
           "sound": "verity.q02.first.hello",
-          "duration_ticks": 45,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.first.hello",
           "pause_after_ticks": 10
         },
         {
           "sound": "verity.q02.first.hoping",
-          "duration_ticks": 72,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.first.hoping",
           "pause_after_ticks": 12
         },
         {
           "sound": "verity.q02.first.imagined_voice",
-          "duration_ticks": 72,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.first.imagined_voice",
           "pause_after_ticks": 14
         },
         {
           "sound": "verity.q02.first.didnt_imagine",
-          "duration_ticks": 55,
+          "duration_ticks": 35,
           "subtitle": "subtitles.universe_verity.q02.first.didnt_imagine",
           "pause_after_ticks": 12
         },
         {
           "sound": "verity.q02.first.already_knew",
-          "duration_ticks": 48,
+          "duration_ticks": 21,
           "subtitle": "subtitles.universe_verity.q02.first.already_knew",
           "pause_after_ticks": 10
         },
         {
           "sound": "verity.q02.first.nice_to_meet",
-          "duration_ticks": 52,
+          "duration_ticks": 54,
           "subtitle": "subtitles.universe_verity.q02.first.nice_to_meet",
           "pause_after_ticks": 0
         }
@@ -104,19 +104,19 @@
       "steps": [
         {
           "sound": "verity.q02.followup.know_what",
-          "duration_ticks": 48,
+          "duration_ticks": 118,
           "subtitle": "subtitles.universe_verity.q02.followup.know_what",
           "pause_after_ticks": 12
         },
         {
           "sound": "verity.q02.followup.dont_remember",
-          "duration_ticks": 55,
+          "duration_ticks": 118,
           "subtitle": "subtitles.universe_verity.q02.followup.dont_remember",
           "pause_after_ticks": 10
         },
         {
           "sound": "verity.q02.followup.did_i",
-          "duration_ticks": 38,
+          "duration_ticks": 21,
           "subtitle": "subtitles.universe_verity.q02.followup.did_i",
           "pause_after_ticks": 0
         }

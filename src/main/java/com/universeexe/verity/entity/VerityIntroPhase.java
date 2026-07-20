@@ -14,7 +14,7 @@ public enum VerityIntroPhase {
     BOUNCING,
     /** Brief hurt face after the bounce settles (~1 s). */
     HURT_FACE,
-    /** Quest 1 voice intro (oh / found opening / personal helper). */
+    /** Quest 1 voice intro — personal helper monologue only (no oh/found_opening). */
     GREETING,
     /** Cinematic finished; mood-based idle face. */
     DONE;

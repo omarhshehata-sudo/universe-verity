@@ -73,17 +73,7 @@ public final class VerityQuestManager {
         VerityVoiceDirector.clearQueue(player, false);
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, true)
-                .withOnStart(() -> {
-                    verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 80);
-                    player.serverLevel().playSound(
-                            null,
-                            verity.blockPosition(),
-                            VeritySounds.GREETING_PERSONAL_HELPER.get(),
-                            SoundSource.NEUTRAL,
-                            0.92f,
-                            1.0f
-                    );
-                });
+                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 12));
         VerityQueuedVoiceEvent event = buildQuest1IntroEvent(player, verity, ctx, () -> completeQuest1(player, verity));
 
         if (VerityVoiceDirector.requestEvent(player, event)) {
@@ -160,15 +150,6 @@ public final class VerityQuestManager {
         }
 
         String subtitleKey = VeritySounds.subtitleKeyFor(greetingId);
-        player.serverLevel().playSound(
-                null,
-                verity.blockPosition(),
-                VeritySounds.GREETING_PERSONAL_HELPER.get(),
-                SoundSource.NEUTRAL,
-                0.92f,
-                1.0f
-        );
-
         PlayVoicePacket packet = new PlayVoicePacket(
                 -1,
                 greetingId,

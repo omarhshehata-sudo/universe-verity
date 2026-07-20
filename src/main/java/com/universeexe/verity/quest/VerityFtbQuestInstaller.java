@@ -27,7 +27,7 @@ public final class VerityFtbQuestInstaller {
             "/data/universe_verity/ftbquests/quests/chapters/verity.snbt";
     private static final String VERSION_MARKER = "universe_verity_chapter_version.txt";
     /** Bump when embedded SNBT content changes (forces chapter rewrite). */
-    private static final String CHAPTER_CONTENT_VERSION = "3";
+    private static final String CHAPTER_CONTENT_VERSION = "4";
 
     private VerityFtbQuestInstaller() {
     }

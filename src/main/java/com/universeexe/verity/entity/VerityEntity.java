@@ -59,9 +59,10 @@ public class VerityEntity extends PathfinderMob {
     public static final int JAR_GREETING_AFTER_SPAWN_TICKS = 60;
     /** Brief hurt face after box-open landing. Combat hurt stays {@link #HURT_FACE_DURATION_TICKS}. */
     public static final int INTRO_LAND_HURT_FACE_TICKS = 20;
-    /** Legacy — JAR spawns at box block Y (gravity drop), not floating above lid. */
-    @Deprecated
-    public static final double INTRO_SPAWN_Y_ABOVE_BOX = 0.0D;
+    /** Hover above the open box before gravity drop (server ticks). */
+    public static final int INTRO_FLOAT_TICKS = 12;
+    /** Spawn height above box block — avoids clipping through lid collision during reveal. */
+    public static final double INTRO_SPAWN_Y_ABOVE_BOX = 1.05D;
 
     private static final EntityDataAccessor<String> DATA_ANIMATION =
             SynchedEntityData.defineId(VerityEntity.class, EntityDataSerializers.STRING);
@@ -92,10 +93,10 @@ public class VerityEntity extends PathfinderMob {
     private static final int THROW_SETTLE_MIN_TICKS = 12;
 
     /** HELLO response busy ticks (clip length + small tail). */
-    public static final int DUR_HELLO_HOPING = 58;
-    public static final int DUR_HELLO_AGAIN = 25;
-    public static final int DUR_YOUR_VOICE_SOUNDS_EXACTLY = 58;
-    public static final int DUR_I_MEAN_IMAGINED_IT = 39;
+    public static final int DUR_HELLO_HOPING = 54;
+    public static final int DUR_HELLO_AGAIN = 21;
+    public static final int DUR_YOUR_VOICE_SOUNDS_EXACTLY = 54;
+    public static final int DUR_I_MEAN_IMAGINED_IT = 35;
     /** FOLLOW response busy ticks (clip length + small tail). */
     public static final int DUR_OKAY_WHERE_ARE_WE_GOING = 45;
     public static final int DUR_ALRIGHT_RIGHT_BEHIND_YOU = 60;
@@ -234,7 +235,7 @@ public class VerityEntity extends PathfinderMob {
         this.greetingStarted = false;
         this.greetingCompleted = false;
         this.greetingStageTicks = 0;
-        this.introPhase = VerityIntroPhase.FALLING;
+        this.introPhase = VerityIntroPhase.FLOATING;
         this.introPhaseTicks = 0;
         this.postRevealTicks = 0;
         this.introLandHandled = false;
@@ -246,15 +247,13 @@ public class VerityEntity extends PathfinderMob {
         this.targetYRot = yawToward(owner);
         setExpression(VerityExpressionState.HAPPY);
         setMoodState(com.universeexe.verity.trust.VerityTrustManager.getMood(owner));
-        // JAR triggerBoxDrop: brief hurt face + immediate gravity bounce.
-        setFaceVariant("hurt");
-        hurtFaceResetTicks = INTRO_LAND_HURT_FACE_TICKS;
+        // Float → fall → bounce → brief land hurt (not hurt at spawn).
+        setFaceVariant("happy");
         setTalking(false);
         setWasThrown(false);
-        setNoGravity(false);
-        triggerBounce();
+        setNoGravity(true);
         com.universeexe.verity.util.VerityDebug.log(
-                "Post-reveal started for {} — JAR fall/bounce/greeting timing",
+                "Post-reveal started for {} — float/fall/bounce/greeting timing",
                 owner.getGameProfile().getName());
     }
 
@@ -518,24 +517,31 @@ public class VerityEntity extends PathfinderMob {
 
         switch (introPhase) {
             case FLOATING -> {
-                setNoGravity(false);
-                introPhase = VerityIntroPhase.FALLING;
-                introPhaseTicks = 0;
+                if (introPhaseTicks >= INTRO_FLOAT_TICKS) {
+                    setNoGravity(false);
+                    introPhase = VerityIntroPhase.FALLING;
+                    introPhaseTicks = 0;
+                }
             }
             case FALLING -> {
                 if (!introLandHandled && this.onGround()) {
                     Vec3 motion = this.getDeltaMovement();
                     if (motion.y <= 0.08D) {
                         float fall = Math.max(this.fallDistance, 0.85f);
-                        causeFallDamage(fall, 1.0f, this.damageSources().fall());
                         introLandHandled = true;
-                        introPhase = VerityIntroPhase.BOUNCING;
+                        introPhase = VerityIntroPhase.HURT_FACE;
+                        applyIntroLandHurtFace();
+                        triggerBounce();
+                        causeFallDamage(fall, 1.0f, this.damageSources().fall());
                         introPhaseTicks = 0;
                     }
                 }
             }
             case BOUNCING, HURT_FACE -> {
-                // Greeting fires on postRevealTicks — keep physics bounce until then.
+                if (introPhase == VerityIntroPhase.HURT_FACE && hurtFaceResetTicks <= 0) {
+                    introPhase = VerityIntroPhase.BOUNCING;
+                    setFaceVariant("happy");
+                }
             }
             case GREETING -> {
                 // Quest voice handled by VerityQuestManager / finishIntroReveal.

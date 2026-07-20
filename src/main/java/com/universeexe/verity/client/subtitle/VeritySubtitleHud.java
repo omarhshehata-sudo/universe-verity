@@ -65,6 +65,10 @@ public final class VeritySubtitleHud {
         if (!UniverseVerity.MOD_ID.equals(location.getNamespace())) {
             return;
         }
+        // Voice director PlayVoicePacket owns dialogue subtitles — avoid 60-tick overrides.
+        if (isActive()) {
+            return;
+        }
         String resolvedSoundId = VeritySounds.resolveSoundId(location);
         if (resolvedSoundId == null) {
             return;
@@ -73,7 +77,7 @@ public final class VeritySubtitleHud {
         if (!VeritySubtitles.isVerityDialogueKey(subtitleKey)) {
             return;
         }
-        show(VeritySubtitles.fromKey(subtitleKey), 60);
+        show(VeritySubtitles.fromKey(subtitleKey), 80);
     }
 
     /** Hide vanilla subtitles while our styled line is active so they do not stack or steal focus. */

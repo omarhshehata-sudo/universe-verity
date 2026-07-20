@@ -63,7 +63,10 @@ public final class VerityFaceTextures {
         if (expression == VerityExpressionState.BLINK || expression == VerityExpressionState.LONG_BLINK) {
             return "happy_sleep";
         }
-        // JAR default — not mood-derived on first reveal.
+        MoodState synced = mood == null ? MoodState.MEH : mood;
+        if (synced != MoodState.MEH && synced != MoodState.HAPPY && synced != MoodState.FRIENDLY) {
+            return sanitize(synced.legacyFaceVariant());
+        }
         return DEFAULT_VARIANT;
     }
 

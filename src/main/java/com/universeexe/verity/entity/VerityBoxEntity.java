@@ -314,7 +314,7 @@ public class VerityBoxEntity extends Entity implements GeoEntity {
         BlockPos spawnPos = this.blockPosition();
         verity.moveTo(
                 spawnPos.getX() + 0.5D,
-                spawnPos.getY(),
+                this.getY() + VerityEntity.INTRO_SPAWN_Y_ABOVE_BOX,
                 spawnPos.getZ() + 0.5D,
                 this.getYRot(),
                 0.0F
