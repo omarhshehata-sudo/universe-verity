@@ -430,8 +430,9 @@ public final class VerityVoiceDirector {
             VerityNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
         }
 
-        state.fallbackTicksRemaining = variant.durationTicks() + 25;
-        VerityDebug.log("[VerityVoice] Play {} session={} player={}", variant.soundId(), sessionId, player.getUUID());
+        state.fallbackTicksRemaining = variant.durationTicks() + 30;
+        VerityDebug.log("[VerityVoice] Play {} session={} player={} request={}",
+                variant.soundId(), sessionId, player.getUUID(), event.requestId());
         syncDebug(player);
     }
 

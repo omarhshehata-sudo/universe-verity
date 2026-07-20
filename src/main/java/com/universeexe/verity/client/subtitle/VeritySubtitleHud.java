@@ -1,6 +1,7 @@
 package com.universeexe.verity.client.subtitle;
 
 import com.universeexe.verity.UniverseVerity;
+import com.universeexe.verity.network.VerityVoiceClientPlayback;
 import com.universeexe.verity.registry.VeritySounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,6 +35,8 @@ public final class VeritySubtitleHud {
             UniverseVerity.LOGGER.warn("[VeritySubtitles] Ignored empty subtitle show()");
             return;
         }
+        activeStyledSubtitle = null;
+        activeTicksRemaining = 0;
         activeStyledSubtitle = styledSubtitle;
         activeTicksRemaining = Math.max(20, durationTicks);
         UniverseVerity.LOGGER.debug("[VeritySubtitles] Show for {} ticks", activeTicksRemaining);
@@ -65,8 +68,8 @@ public final class VeritySubtitleHud {
         if (!UniverseVerity.MOD_ID.equals(location.getNamespace())) {
             return;
         }
-        // Voice director PlayVoicePacket owns dialogue subtitles — avoid 60-tick overrides.
-        if (isActive()) {
+        // Voice director PlayVoicePacket owns dialogue subtitles — never double-stack from PlaySoundEvent.
+        if (VerityVoiceClientPlayback.isDirectorPlaybackActive() || isActive()) {
             return;
         }
         String resolvedSoundId = VeritySounds.resolveSoundId(location);

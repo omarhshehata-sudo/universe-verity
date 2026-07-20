@@ -14,6 +14,7 @@ import com.universeexe.verity.voice.VerityQueuedVoiceEvent;
 import com.universeexe.verity.voice.VerityVoiceCategory;
 import com.universeexe.verity.voice.VerityVoiceContext;
 import com.universeexe.verity.voice.VerityVoiceDirector;
+import com.universeexe.verity.voice.VerityVoiceDurations;
 import com.universeexe.verity.voice.VerityVoiceManifest;
 import com.universeexe.verity.voice.VerityVoiceMemory;
 import com.universeexe.verity.voice.VerityVoicePool;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Quest 1 (MEET VERITY!), Quest 2 (SAY HELLO), and Quest 3 (MAKE A SOUND) progression hooks.
@@ -42,10 +44,10 @@ public final class VerityQuestManager {
     public static final int Q2_REPEAT_MIN_GAP_TICKS = 100;
     /** Server-side HELLO debounce after accept (5 s). */
     public static final int HELLO_DEBOUNCE_TICKS = 100;
-    /** Matches {@code greeting_personal_helper.ogg} (~5.87 s). */
-    private static final int GREETING_MONOLOGUE_TICKS = 118;
+    private static final int GREETING_MONOLOGUE_TICKS = VerityVoiceDurations.GREETING_PERSONAL_HELPER;
     private static final Map<UUID, Long> HELLO_DEBOUNCE_UNTIL = new ConcurrentHashMap<>();
     private static final Set<UUID> HELLO_CONVERSATION_ACTIVE = ConcurrentHashMap.newKeySet();
+    private static final AtomicInteger HELLO_SESSION_COUNTER = new AtomicInteger(1);
 
     private VerityQuestManager() {
     }
@@ -70,13 +72,21 @@ public final class VerityQuestManager {
             VerityDebug.warn("Quest 1 intro skipped — Verity missing for {}", player.getGameProfile().getName());
             return;
         }
-        VerityVoiceDirector.clearQueue(player, false);
-        verity.prepareForQuestGreeting();
+        UniverseVerity.LOGGER.info(
+                "[VerityQuest] beginQuest1Intro player={} verity={}",
+                player.getGameProfile().getName(),
+                verity.getId());
+        VerityVoiceDirector.clearQueue(player, true);
+        VerityVoiceDirector.interrupt(player, VerityVoiceCategory.QUEST);
         VerityVoiceContext ctx = voiceContext(player, verity, true)
-                .withOnStart(() -> verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 12));
+                .withOnStart(() -> {
+                    verity.prepareForQuestGreeting();
+                    verity.beginTalkingForTicks(GREETING_MONOLOGUE_TICKS + 12);
+                });
         VerityQueuedVoiceEvent event = buildQuest1IntroEvent(player, verity, ctx, () -> completeQuest1(player, verity));
 
         if (VerityVoiceDirector.requestEvent(player, event)) {
+            UniverseVerity.LOGGER.info("[VerityQuest] Quest 1 greeting queued via voice director");
             return;
         }
         VerityDebug.warn("Quest 1 intro voice queue failed; retrying direct fallback for {}",
@@ -102,6 +112,8 @@ public final class VerityQuestManager {
     }
 
     private static void playQuest1IntroDirectFallback(ServerPlayer player, VerityEntity verity, VerityVoiceContext ctx) {
+        VerityVoiceDirector.clearQueue(player, true);
+        VerityVoiceDirector.interrupt(player, VerityVoiceCategory.QUEST);
         if (ctx.onStart() != null) {
             ctx.onStart().run();
         }
@@ -112,6 +124,7 @@ public final class VerityQuestManager {
                 () -> completeQuest1(player, verity)
         );
         if (VerityVoiceDirector.requestEvent(player, fallback)) {
+            UniverseVerity.LOGGER.info("[VerityQuest] Quest 1 greeting queued via direct fallback");
             return;
         }
         VerityDebug.warn("Quest 1 intro fallback queue failed; playing greeting directly for {}",
@@ -122,7 +135,7 @@ public final class VerityQuestManager {
                 greetingId,
                 VerityVoiceCategory.QUEST,
                 GREETING_MONOLOGUE_TICKS,
-                com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(greetingId),
+                VeritySounds.subtitleKeyFor(greetingId),
                 0.92f,
                 1.0f,
                 ctx
@@ -149,9 +162,20 @@ public final class VerityQuestManager {
             ctx.onStart().run();
         }
 
+        int sessionId = HELLO_SESSION_COUNTER.getAndIncrement();
         String subtitleKey = VeritySounds.subtitleKeyFor(greetingId);
+        player.serverLevel().playSound(
+                null,
+                verity.getX(),
+                verity.getY(),
+                verity.getZ(),
+                VeritySounds.GREETING_PERSONAL_HELPER.get(),
+                SoundSource.NEUTRAL,
+                0.92f,
+                1.0f
+        );
         PlayVoicePacket packet = new PlayVoicePacket(
-                -1,
+                sessionId,
                 greetingId,
                 verity.getX(),
                 verity.getY(),
@@ -174,7 +198,7 @@ public final class VerityQuestManager {
             }
         });
 
-        VerityDebug.warn("Hard fallback greeting played for {}", player.getGameProfile().getName());
+        VerityDebug.warn("Hard fallback greeting played session={} for {}", sessionId, player.getGameProfile().getName());
     }
 
     public static void completeQuest1(ServerPlayer player, @Nullable VerityEntity verity) {
@@ -201,10 +225,14 @@ public final class VerityQuestManager {
     }
 
     public static void markHelloAccepted(ServerPlayer player) {
-        HELLO_DEBOUNCE_UNTIL.put(
-                player.getUUID(),
-                player.serverLevel().getGameTime() + HELLO_DEBOUNCE_TICKS
-        );
+        long until = player.serverLevel().getGameTime() + HELLO_DEBOUNCE_TICKS;
+        HELLO_DEBOUNCE_UNTIL.put(player.getUUID(), until);
+    }
+
+    public static void extendHelloDebounce(ServerPlayer player, int extraTicks) {
+        long now = player.serverLevel().getGameTime();
+        long current = HELLO_DEBOUNCE_UNTIL.getOrDefault(player.getUUID(), now);
+        HELLO_DEBOUNCE_UNTIL.put(player.getUUID(), Math.max(current, now + extraTicks));
     }
 
     public static void handleHelloIntent(ServerPlayer player, VerityEntity verity, @Nullable String phrase) {
@@ -214,8 +242,9 @@ public final class VerityQuestManager {
         UUID playerId = player.getUUID();
         if (isHelloDebounced(player)) {
             UniverseVerity.LOGGER.info(
-                    "[VerityQuest] Dropped duplicate HELLO from {} (debounce active)",
-                    player.getGameProfile().getName());
+                    "[VerityQuest] Dropped duplicate HELLO from {} (debounce active until tick {})",
+                    player.getGameProfile().getName(),
+                    HELLO_DEBOUNCE_UNTIL.get(playerId));
             return;
         }
         if (HELLO_CONVERSATION_ACTIVE.contains(playerId)) {
@@ -226,7 +255,14 @@ public final class VerityQuestManager {
         }
         if (VerityVoiceDirector.isPlayerBusy(playerId)) {
             UniverseVerity.LOGGER.info(
-                    "[VerityQuest] Dropped duplicate HELLO from {} (voice director busy)",
+                    "[VerityQuest] Dropped duplicate HELLO from {} (voice director busy: {})",
+                    player.getGameProfile().getName(),
+                    VerityVoiceDirector.statusFor(player));
+            return;
+        }
+        if (verity.isTalking() || verity.isVoiceDirectorBusy()) {
+            UniverseVerity.LOGGER.info(
+                    "[VerityQuest] Dropped duplicate HELLO from {} (verity talking/busy)",
                     player.getGameProfile().getName());
             return;
         }
@@ -245,21 +281,104 @@ public final class VerityQuestManager {
 
     private static void playFirstGreeting(ServerPlayer player, VerityEntity verity) {
         UUID playerId = player.getUUID();
+        int sessionTag = HELLO_SESSION_COUNTER.getAndIncrement();
         HELLO_CONVERSATION_ACTIVE.add(playerId);
+        extendHelloDebounce(player, VerityVoiceDurations.Q02_FIRST_GREETING_TOTAL);
         VerityVoiceDirector.clearQueue(player, true);
+        VerityVoiceDirector.interrupt(player, VerityVoiceCategory.PLAYER_INTERACTION);
         verity.clearVoiceCueQueue();
         verity.prepareForQuestGreeting();
         VerityVoiceContext ctx = voiceContext(player, verity, false);
+        UniverseVerity.LOGGER.info(
+                "[VerityQuest] HELLO session={} starting quest_02_first_greeting for {}",
+                sessionTag,
+                player.getGameProfile().getName());
         if (VerityVoiceDirector.requestConversation(player, "quest_02_first_greeting", ctx, () -> {
             HELLO_CONVERSATION_ACTIVE.remove(playerId);
+            extendHelloDebounce(player, HELLO_DEBOUNCE_TICKS);
+            UniverseVerity.LOGGER.info("[VerityQuest] HELLO session={} finished for {}", sessionTag, player.getGameProfile().getName());
             completeQuest2(player, verity);
             VerityPlayerData.setQ2FollowupUntil(player, player.serverLevel().getGameTime() + Q2_FOLLOWUP_WINDOW_TICKS);
         })) {
             return;
         }
         HELLO_CONVERSATION_ACTIVE.remove(playerId);
-        VerityDebug.warn("Quest 2 first greeting voice failed; completing with fallback");
-        completeQuest2(player, verity);
+        VerityDebug.warn("Quest 2 first greeting voice failed; playing inline fallback session={}", sessionTag);
+        playHelloInlineFallback(player, verity, ctx, sessionTag);
+    }
+
+    private static void playHelloInlineFallback(
+            ServerPlayer player,
+            VerityEntity verity,
+            VerityVoiceContext ctx,
+            int sessionTag
+    ) {
+        UUID playerId = player.getUUID();
+        HELLO_CONVERSATION_ACTIVE.add(playerId);
+        VerityVoiceDirector.clearQueue(player, true);
+        var resolved = new ArrayList<VerityQueuedVoiceEvent.ResolvedStep>();
+        addInline(resolved, "verity.q02.first.hello", VerityVoiceDurations.Q02_FIRST_HELLO, 10);
+        addInline(resolved, "verity.q02.first.hoping", VerityVoiceDurations.Q02_FIRST_HOPING, 12);
+        addInline(resolved, "verity.q02.first.imagined_voice", VerityVoiceDurations.Q02_FIRST_IMAGINED_VOICE, 14);
+        addInline(resolved, "verity.q02.first.didnt_imagine", VerityVoiceDurations.Q02_FIRST_DIDNT_IMAGINE, 12);
+        addInline(resolved, "verity.q02.first.already_knew", VerityVoiceDurations.Q02_FIRST_ALREADY_KNEW, 10);
+        addInline(resolved, "verity.q02.first.nice_to_meet", VerityVoiceDurations.Q02_FIRST_NICE_TO_MEET, 0);
+        VerityQueuedVoiceEvent event = VerityQueuedVoiceEvent.fromConversation(
+                "quest:hello_inline_fallback",
+                new com.universeexe.verity.voice.VerityConversation("quest_02_first_greeting", VerityVoiceCategory.QUEST, java.util.List.of()),
+                resolved,
+                ctx,
+                () -> {
+                    HELLO_CONVERSATION_ACTIVE.remove(playerId);
+                    extendHelloDebounce(player, HELLO_DEBOUNCE_TICKS);
+                    UniverseVerity.LOGGER.info("[VerityQuest] HELLO inline fallback session={} finished", sessionTag);
+                    completeQuest2(player, verity);
+                    VerityPlayerData.setQ2FollowupUntil(player, player.serverLevel().getGameTime() + Q2_FOLLOWUP_WINDOW_TICKS);
+                }
+        );
+        if (VerityVoiceDirector.requestEvent(player, event)) {
+            return;
+        }
+        HELLO_CONVERSATION_ACTIVE.remove(playerId);
+        UniverseVerity.LOGGER.error("[VerityQuest] HELLO session={} all paths failed — forcing single hello line", sessionTag);
+        if (VerityVoiceDirector.requestDirect(
+                player,
+                "verity.q02.first.hello",
+                VerityVoiceCategory.QUEST,
+                VerityVoiceDurations.Q02_FIRST_HELLO,
+                VeritySounds.subtitleKeyFor("verity.q02.first.hello"),
+                0.92f,
+                1.0f,
+                ctx.withOnComplete(() -> completeQuest2(player, verity))
+        )) {
+            return;
+        }
+        player.serverLevel().playSound(
+                null,
+                verity.getX(),
+                verity.getY(),
+                verity.getZ(),
+                VeritySounds.Q02_FIRST_HELLO.get(),
+                SoundSource.NEUTRAL,
+                0.92f,
+                1.0f
+        );
+        PlayVoicePacket packet = new PlayVoicePacket(
+                sessionTag,
+                "verity.q02.first.hello",
+                verity.getX(),
+                verity.getY(),
+                verity.getZ(),
+                0.92f,
+                1.0f,
+                VeritySounds.subtitleKeyFor("verity.q02.first.hello"),
+                verity.getId(),
+                VerityVoiceDurations.Q02_FIRST_HELLO,
+                false,
+                SoundSource.NEUTRAL.ordinal()
+        );
+        VerityNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        verity.scheduleServerCallback(VerityVoiceDurations.Q02_FIRST_HELLO, () -> completeQuest2(player, verity));
     }
 
     public static void completeQuest2(ServerPlayer player, VerityEntity verity) {
@@ -305,6 +424,7 @@ public final class VerityQuestManager {
         if (VerityPlayerData.isVoiceKnowledgeQuestioned(player)) {
             return;
         }
+        VerityVoiceDirector.clearQueue(player, true);
         VerityVoiceContext ctx = voiceContext(player, verity, false);
         if (VerityVoiceDirector.requestConversation(player, "quest_02_knowledge_followup", ctx, () ->
                 VerityPlayerData.setVoiceKnowledgeQuestioned(player, true))) {
@@ -318,6 +438,7 @@ public final class VerityQuestManager {
             return;
         }
         VerityVoiceDirector.clearQueue(player, true);
+        VerityVoiceDirector.interrupt(player, VerityVoiceCategory.PLAYER_INTERACTION);
         verity.clearVoiceCueQueue();
         if (!phrase.isBlank() && VerityTrustManager.isPoliteGreeting(phrase)) {
             VerityTrustManager.addTrustDefault(player, verity, TrustReason.POLITE_GREETING);
@@ -344,32 +465,6 @@ public final class VerityQuestManager {
                 || phrase.contains("really know");
     }
 
-    private static VerityVoiceVariant pickQuest1Ending(ServerPlayer player, VerityEntity verity) {
-        VerityVoiceSnapshot snapshot = VerityVoiceSnapshot.capture(player, verity);
-        Optional<VerityVoicePool> pool = VerityVoiceManifest.get().pool("quest_01_intro_ending");
-        if (pool.isPresent()) {
-            Optional<VerityVoiceVariant> pick = pool.get().pick(
-                    player,
-                    snapshot,
-                    VerityVoiceMemory.forPlayer(player),
-                    player.serverLevel().getRandom()
-            );
-            if (pick.isPresent()) {
-                return pick.get();
-            }
-        }
-        boolean important = player.getRandom().nextFloat() >= 0.85f;
-        String sound = important ? "verity.q01.intro.everything_important" : "verity.q01.intro.know_everything";
-        return VerityVoiceVariant.simple(
-                sound,
-                sound,
-                important ? 38 : 36,
-                com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(sound),
-                0.92f,
-                1.0f
-        );
-    }
-
     private static void addInline(
             ArrayList<VerityQueuedVoiceEvent.ResolvedStep> steps,
             String soundId,
@@ -381,7 +476,7 @@ public final class VerityQuestManager {
                         soundId,
                         soundId,
                         duration,
-                        com.universeexe.verity.registry.VeritySounds.subtitleKeyFor(soundId),
+                        VeritySounds.subtitleKeyFor(soundId),
                         0.92f,
                         1.0f
                 ),

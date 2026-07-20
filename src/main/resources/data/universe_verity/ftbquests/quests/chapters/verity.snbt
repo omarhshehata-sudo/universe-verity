@@ -11,7 +11,7 @@
 		"It already knows you are here."
 	]
 	icon: {
-		id: "universe_verity:verity_box_quest_icon"
+		id: "universe_verity:verity_item"
 	}
 	default_quest_shape: "circle"
 	default_hide_dependency_lines: false
@@ -25,7 +25,7 @@
 			title: "MEET VERITY!"
 			subtitle: "Something arrived with you."
 			icon: {
-				id: "universe_verity:verity_box_quest_icon"
+				id: "universe_verity:verity_item"
 			}
 			description: [
 				"Something arrived before you did."
@@ -67,7 +67,7 @@
 			subtitle: "He is waiting for your voice."
 			dependencies: ["verity_meet_verity"]
 			icon: {
-				id: "universe_verity:verity_voice_quest_icon"
+				id: "minecraft:echo_shard"
 			}
 			description: [
 				"Verity has not looked away since leaving the box."
@@ -107,7 +107,7 @@
 			subtitle: "A demonstration of incredible power."
 			dependencies: ["verity_say_hello"]
 			icon: {
-				id: "universe_verity:verity_sound_quest_icon"
+				id: "minecraft:note_block"
 			}
 			description: [
 				"Verity claims he can do almost anything."

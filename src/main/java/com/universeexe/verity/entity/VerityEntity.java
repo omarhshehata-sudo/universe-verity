@@ -296,8 +296,6 @@ public class VerityEntity extends PathfinderMob {
         hurtFaceResetTicks = 0;
         setFaceVariant("happy");
         setExpression(VerityExpressionState.GREETING);
-        setTalking(true);
-        talkTicksRemaining = GREETING_DURATION_TICKS;
         triggerAnimation("greeting");
         com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, this);
     }
