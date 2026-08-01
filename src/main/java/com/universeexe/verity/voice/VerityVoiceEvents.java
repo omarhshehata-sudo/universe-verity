@@ -3,6 +3,7 @@ package com.universeexe.verity.voice;
 import com.universeexe.verity.config.VerityCommonConfig;
 import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.entity.VerityEntity;
+import com.universeexe.verity.quest.VerityQuest1IntroPlan;
 import com.universeexe.verity.trust.VerityTrustManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,6 +30,12 @@ public final class VerityVoiceEvents {
 
     @SubscribeEvent
     public void onServerStarted(ServerStartedEvent event) {
+        try {
+            VerityQuest1IntroPlan.verifyOnce();
+        } catch (IllegalStateException ex) {
+            com.universeexe.verity.UniverseVerity.LOGGER.error("[VerityQuest1Intro] Plan verification failed", ex);
+            throw ex;
+        }
         com.universeexe.verity.UniverseVerity.LOGGER.info(
                 "[VerityVoice] Director online — {} pools, {} conversations",
                 VerityVoiceManifest.get().pools().size(),

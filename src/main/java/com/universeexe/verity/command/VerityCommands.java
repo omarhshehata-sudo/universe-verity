@@ -13,6 +13,7 @@ import com.universeexe.verity.entity.VerityEntity;
 import com.universeexe.verity.entity.VerityRevealStage;
 import com.universeexe.verity.quest.VerityBookAudit;
 import com.universeexe.verity.quest.VerityFtbQuestBridge;
+import com.universeexe.verity.quest.VerityQuest1IntroPlan;
 import com.universeexe.verity.quest.VerityQuestManager;
 import com.universeexe.verity.quest.VerityQuestSpeechSimulator;
 import com.universeexe.verity.quest.VerityVoiceAudit;
@@ -243,6 +244,8 @@ public final class VerityCommands {
                                     VerityVoiceAudit.sendReport(ctx.getSource().getPlayerOrException());
                                     return 1;
                                 }))
+                        .then(Commands.literal("intro_plan")
+                                .executes(ctx -> voiceIntroPlan(ctx.getSource(), ctx.getSource().getPlayerOrException())))
                         .then(Commands.literal("replay")
                                 .then(Commands.literal("quest1_box")
                                         .executes(ctx -> voiceReplayQuest1Box(ctx.getSource(), ctx.getSource().getPlayerOrException())))
@@ -1170,13 +1173,20 @@ public final class VerityCommands {
         return 1;
     }
 
+    private static int voiceIntroPlan(CommandSourceStack source, ServerPlayer player) {
+        VerityQuest1IntroPlan.sendPlanTo(player);
+        source.sendSuccess(() -> Component.literal("Quest 1 intro plan dumped (see chat + latest.log dry-run)."), true);
+        VerityQuest1IntroPlan.logPlanDryRun("command");
+        return 1;
+    }
+
     private static int voiceReplayQuest1Intro(CommandSourceStack source, ServerPlayer player) {
         Optional<VerityEntity> verity = findVerity(player);
         if (verity.isEmpty()) {
             source.sendFailure(Component.literal("No owned Verity for Quest 1 intro replay."));
             return 0;
         }
-        VerityQuestManager.beginQuest1Intro(player, verity.get());
+        VerityQuestManager.replayQuest1Intro(player, verity.get());
         source.sendSuccess(() -> Component.literal("Replayed Quest 1 intro sequence."), true);
         return 1;
     }

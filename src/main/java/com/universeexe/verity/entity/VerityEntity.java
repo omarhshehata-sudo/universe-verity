@@ -5,6 +5,7 @@ import com.universeexe.verity.trust.MoodState;
 import com.universeexe.verity.config.VerityCommonConfig;
 import com.universeexe.verity.data.VerityPlayerData;
 import com.universeexe.verity.item.VerityItem;
+import com.universeexe.verity.quest.VerityQuestManager;
 import com.universeexe.verity.registry.VerityItems;
 import com.universeexe.verity.registry.VeritySounds;
 import com.universeexe.verity.util.VerityDebug;
@@ -297,7 +298,7 @@ public class VerityEntity extends PathfinderMob {
         setFaceVariant("happy");
         setExpression(VerityExpressionState.GREETING);
         triggerAnimation("greeting");
-        com.universeexe.verity.quest.VerityQuestManager.beginQuest1Intro(owner, this);
+        VerityQuestManager.beginQuest1Intro(owner, this);
     }
 
     public void scheduleServerCallback(int ticks, Runnable callback) {
@@ -710,11 +711,22 @@ public class VerityEntity extends PathfinderMob {
     }
 
     private void startGreeting(@Nullable ServerPlayer owner) {
+        if (isIntroCinematicActive() || introPhase == VerityIntroPhase.GREETING) {
+            // Post-reveal greeting is owned by VerityQuestManager + PlayVoicePacket.
+            return;
+        }
         if (!VerityCommonConfig.ENABLE_GREETING.get()) {
             greetingStarted = true;
             greetingCompleted = true;
             pendingGreeting = false;
             requestDefaultSmile();
+            return;
+        }
+        if (owner != null) {
+            VerityQuestManager.replayQuest1Intro(owner, this);
+            greetingStarted = true;
+            greetingCompleted = true;
+            pendingGreeting = false;
             return;
         }
         greetingStarted = true;
@@ -723,17 +735,15 @@ public class VerityEntity extends PathfinderMob {
         triggerAnimation("greeting");
         setTalking(true);
         talkTicksRemaining = GREETING_DURATION_TICKS;
-        float volume = VerityCommonConfig.GREETING_VOLUME.get().floatValue()
-                * (VerityCommonConfig.GREETING_HEARING_DISTANCE.get().floatValue() / 16f);
-        this.level().playSound(null, getX(), getY(), getZ(),
-                VeritySounds.GREETING_PERSONAL_HELPER.get(), SoundSource.NEUTRAL, volume, 1.0f);
-        if (owner != null) {
-            VerityPlayerData.setGreetingPlayed(owner, true);
-        }
-        VerityDebug.log("Played Verity greeting from {}", this.getUUID());
+        VerityDebug.warn("startGreeting called without owner — animation only");
     }
 
     public void replayGreeting() {
+        ServerPlayer owner = findOwner();
+        if (owner != null) {
+            VerityQuestManager.replayQuest1Intro(owner, this);
+            return;
+        }
         greetingStarted = false;
         greetingCompleted = false;
         pendingGreeting = true;
